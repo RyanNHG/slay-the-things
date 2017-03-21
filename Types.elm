@@ -36,4 +36,5 @@ type alias HeroAttributes =
     { damage : Int
     , health : Int
     , speed : Int
+    , magic : Int
     }

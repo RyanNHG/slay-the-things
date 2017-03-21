@@ -1,8 +1,10 @@
 module Main exposing (main)
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Context exposing (Context)
 import MainMenu
+import HeroCreate
 
 
 type alias Model =
@@ -14,15 +16,16 @@ type alias Model =
 type Msg
     = ContextMsg Context.Msg
     | MainMenuMsg MainMenu.Msg
+    | HeroCreateMsg HeroCreate.Msg
 
 
 type alias PageModels =
     { mainMenu : MainMenu.Model
+    , heroCreate : HeroCreate.Model
     }
 
 
 
--- | HeroCreate HeroCreateModel
 -- | MapView MapViewModel
 -- | RoadView RoadViewModel
 -- | CombatView CombatViewModel
@@ -51,6 +54,7 @@ initPageModels : Context -> PageModels
 initPageModels context =
     PageModels
         (MainMenu.init context)
+        (HeroCreate.init context)
 
 
 main : Program Never Model Msg
@@ -97,6 +101,13 @@ update msg model =
                     updateMainMenuPageModel
                     model
 
+            HeroCreateMsg msg ->
+                localUpdate
+                    (HeroCreate.update msg model.pageModels.heroCreate)
+                    HeroCreateMsg
+                    updateHeroCreatePageModel
+                    model
+
 
 localUpdate : ( aModel, Cmd aMsg, Cmd Context.Msg ) -> (aMsg -> Msg) -> (aModel -> PageModels -> PageModels) -> Model -> ( Model, Cmd Msg )
 localUpdate ( localModel, localMsg, contextMsg ) msgFunc pageModelsUpdater model =
@@ -115,19 +126,40 @@ updateMainMenuPageModel model pageModels =
     { pageModels | mainMenu = model }
 
 
+updateHeroCreatePageModel : HeroCreate.Model -> PageModels -> PageModels
+updateHeroCreatePageModel model pageModels =
+    { pageModels | heroCreate = model }
+
+
 initPageModel : Context.Page -> Context -> PageModels -> PageModels
-initPageModel page context pageModels =
+initPageModel page context =
     case page of
         Context.MainMenu ->
-            { pageModels | mainMenu = (MainMenu.init context) }
+            updateMainMenuPageModel (MainMenu.init context)
 
         Context.HeroCreate ->
-            pageModels
+            updateHeroCreatePageModel (HeroCreate.init context)
 
 
 view : Model -> Html Msg
 view model =
-    text "Haro"
+    div [ class "app" ]
+        [ viewPage model
+        ]
+
+
+viewPage : Model -> Html Msg
+viewPage model =
+    let
+        models =
+            model.pageModels
+    in
+        case model.context.page of
+            Context.MainMenu ->
+                Html.map MainMenuMsg (MainMenu.view models.mainMenu)
+
+            Context.HeroCreate ->
+                Html.map HeroCreateMsg (HeroCreate.view models.heroCreate)
 
 
 subscriptions : Model -> Sub Msg

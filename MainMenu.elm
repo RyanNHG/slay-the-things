@@ -4,6 +4,7 @@ import Context exposing (Context)
 import Utilities exposing (getCmd)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 
 
 type alias MenuButton =
@@ -43,4 +44,23 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ class "main-menu" ]
-        [ text model.title ]
+        [ viewTitle model
+        , viewMenuButtons model
+        ]
+
+
+viewTitle : Model -> Html Msg
+viewTitle model =
+    h1 [] [ text model.title ]
+
+
+viewMenuButtons : Model -> Html Msg
+viewMenuButtons model =
+    div [ class "menu-buttons" ]
+        (List.map viewMenuButton model.buttons)
+
+
+viewMenuButton : MenuButton -> Html Msg
+viewMenuButton menuButton =
+    button [ class "button", onClick menuButton.onClick ]
+        [ text menuButton.label ]

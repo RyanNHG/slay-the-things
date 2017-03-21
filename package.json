@@ -1,0 +1,22 @@
+{
+  "name": "slay-the-things",
+  "version": "1.0.0",
+  "description": "slay the things!",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "gulp watch",
+    "elm": "elm-make main/src/Main.elm --output=main/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-elm": "^0.6.1",
+    "gulp-nodemon": "^2.2.1",
+    "gulp-watch": "^4.3.11"
+  },
+  "dependencies": {
+    "express": "^4.15.2"
+  }
+}
