@@ -13,14 +13,16 @@ type alias Context =
 type Msg
     = GotoPage Page
     | InitPage Page
+    | AddHero Hero
+    | PlayAs Hero
 
 
 type Page
     = MainMenu
     | HeroCreate
+    | CombatView
 
 
 
 -- | MapView
 -- | RoadView
--- | CombatView

@@ -16,3 +16,8 @@ getCmd msg =
 just : aModel -> ( aModel, Cmd a, Cmd b )
 just model =
     ( model, Cmd.none, Cmd.none )
+
+
+unpartition : ( List a, List a ) -> List a
+unpartition ( a, b ) =
+    a ++ b

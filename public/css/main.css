@@ -1,0 +1,98 @@
+main,
+.app,
+.app > * {
+    height: 100%;
+}
+
+.is-flex {
+    display: flex !important;
+}
+
+.is-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.button {
+    background-color: #069;
+    border-color: #069;
+}
+.button:hover {
+    background-color: #069;
+    border-color: #069;
+}
+
+.main-menu > .column {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-menu .align-start {
+    align-items: flex-start;
+}
+
+.main-menu .action-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-create {
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-create .navbar {
+    display: flex;
+    align-items: center; 
+    padding: .75rem 1.5rem;
+    box-shadow: rgba(10,10,10,.3) 0 2px 4px;
+}
+
+.hero-create .navbar .back-button {
+    margin: 0;
+    margin-right: 1.5rem;
+    padding: 0 1.5rem;
+}
+
+.hero-create .navbar .navbar-label {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.hero-create .navbar .navbar-label h4 {
+    margin: 0;
+}
+
+.hero-create .options-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.hero-create .options {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-create .options .button {
+    padding: 1.5rem;
+    height: inherit;
+    font-size: 1.5rem;
+    max-width: 480px;
+    width: 100%;
+}
+
+.hero-create .name-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    max-width: 480px;
+}

@@ -5,8 +5,8 @@ var gulp = require('gulp'),
 
 var paths = {
     elm: {
-        main: './Main.elm',
-        input: './*.elm',
+        main: './src/Main.elm',
+        input: './src/*.elm',
         output: {
             directory: 'public/js/',
             filename: 'main.js'
@@ -24,13 +24,14 @@ gulp.task('elm', ['elm-make'], () => {
   
   gulp.src(paths.elm.main)
     .pipe(elm.bundle(paths.elm.output.filename, elmOptions))
+    .on('error', console.error)
     .pipe(gulp.dest(paths.elm.output.directory))
 
 })
 
 gulp.task('watch:elm', ['elm'], () => {
 
-    watch(paths.elm.input, ['elm'])
+    gulp.watch(paths.elm.input, ['elm'])
 
 })
 

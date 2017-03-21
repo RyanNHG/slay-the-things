@@ -12444,23 +12444,34 @@ var _user$project$Context$Context = F3(
 	function (a, b, c) {
 		return {hero: a, heroes: b, page: c};
 	});
+var _user$project$Context$PlayAs = function (a) {
+	return {ctor: 'PlayAs', _0: a};
+};
+var _user$project$Context$AddHero = function (a) {
+	return {ctor: 'AddHero', _0: a};
+};
 var _user$project$Context$InitPage = function (a) {
 	return {ctor: 'InitPage', _0: a};
 };
 var _user$project$Context$GotoPage = function (a) {
 	return {ctor: 'GotoPage', _0: a};
 };
+var _user$project$Context$CombatView = {ctor: 'CombatView'};
 var _user$project$Context$HeroCreate = {ctor: 'HeroCreate'};
 var _user$project$Context$MainMenu = {ctor: 'MainMenu'};
 
+var _user$project$Utilities$unpartition = function (_p0) {
+	var _p1 = _p0;
+	return A2(_elm_lang$core$Basics_ops['++'], _p1._0, _p1._1);
+};
 var _user$project$Utilities$just = function (model) {
 	return {ctor: '_Tuple3', _0: model, _1: _elm_lang$core$Platform_Cmd$none, _2: _elm_lang$core$Platform_Cmd$none};
 };
 var _user$project$Utilities_ops = _user$project$Utilities_ops || {};
 _user$project$Utilities_ops['!!'] = F2(
-	function (model, _p0) {
-		var _p1 = _p0;
-		return {ctor: '_Tuple3', _0: model, _1: _p1._0, _2: _p1._1};
+	function (model, _p2) {
+		var _p3 = _p2;
+		return {ctor: '_Tuple3', _0: model, _1: _p3._0, _2: _p3._1};
 	});
 var _user$project$Utilities$getCmd = function (msg) {
 	return A2(
@@ -12469,6 +12480,588 @@ var _user$project$Utilities$getCmd = function (msg) {
 		_elm_lang$core$Task$succeed(msg));
 };
 
+var _user$project$CombatView$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('combat-view'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html$text(model.title),
+			_1: {ctor: '[]'}
+		});
+};
+var _user$project$CombatView$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		return _user$project$Utilities$just(model);
+	});
+var _user$project$CombatView$Model = function (a) {
+	return {title: a};
+};
+var _user$project$CombatView$init = function (context) {
+	return _user$project$CombatView$Model('Fight begin!');
+};
+var _user$project$CombatView$NoOp = {ctor: 'NoOp'};
+
+var _user$project$HeroCreate$viewFooter = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('footer'),
+			_1: {ctor: '[]'}
+		},
+		{ctor: '[]'});
+};
+var _user$project$HeroCreate$viewClassOption = function (option) {
+	return A2(
+		_elm_lang$html$Html$button,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('button'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html_Events$onClick(option.msg),
+				_1: {ctor: '[]'}
+			}
+		},
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html$text(option.label),
+			_1: {ctor: '[]'}
+		});
+};
+var _user$project$HeroCreate$viewClassOptions = F2(
+	function (options, model) {
+		return A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$class('options'),
+				_1: {ctor: '[]'}
+			},
+			A2(_elm_lang$core$List$map, _user$project$HeroCreate$viewClassOption, options));
+	});
+var _user$project$HeroCreate$getHeroClass = function (maybeMainClass) {
+	var _p0 = maybeMainClass;
+	if (_p0.ctor === 'Nothing') {
+		return _elm_lang$core$Maybe$Nothing;
+	} else {
+		var _p1 = _p0._0;
+		switch (_p1.ctor) {
+			case 'AlmostMelee':
+				var _p2 = _p1._0;
+				if (_p2.ctor === 'Just') {
+					return _elm_lang$core$Maybe$Just(
+						_user$project$Types$Melee(_p2._0));
+				} else {
+					return _elm_lang$core$Maybe$Nothing;
+				}
+			case 'AlmostRanged':
+				var _p3 = _p1._0;
+				if (_p3.ctor === 'Just') {
+					return _elm_lang$core$Maybe$Just(
+						_user$project$Types$Ranged(_p3._0));
+				} else {
+					return _elm_lang$core$Maybe$Nothing;
+				}
+			default:
+				var _p4 = _p1._0;
+				if (_p4.ctor === 'Just') {
+					return _elm_lang$core$Maybe$Just(
+						_user$project$Types$Magic(_p4._0));
+				} else {
+					return _elm_lang$core$Maybe$Nothing;
+				}
+		}
+	}
+};
+var _user$project$HeroCreate$initialAttributes = function ($class) {
+	var _p5 = $class;
+	switch (_p5.ctor) {
+		case 'Melee':
+			var _p6 = _p5._0;
+			if (_p6.ctor === 'Knight') {
+				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			} else {
+				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			}
+		case 'Ranged':
+			var _p7 = _p5._0;
+			if (_p7.ctor === 'Ranger') {
+				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			} else {
+				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			}
+		default:
+			var _p8 = _p5._0;
+			if (_p8.ctor === 'Wizard') {
+				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			} else {
+				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			}
+	}
+};
+var _user$project$HeroCreate$initialLevel = 1;
+var _user$project$HeroCreate$getHero = function (model) {
+	var maybeHeroClass = _user$project$HeroCreate$getHeroClass(model.heroClass);
+	if (_elm_lang$core$Native_Utils.eq(
+		_elm_lang$core$String$length(model.heroName),
+		0)) {
+		return _elm_lang$core$Maybe$Nothing;
+	} else {
+		var _p9 = maybeHeroClass;
+		if (_p9.ctor === 'Just') {
+			var _p10 = _p9._0;
+			return _elm_lang$core$Maybe$Just(
+				A4(
+					_user$project$Types$Hero,
+					model.heroName,
+					_p10,
+					_user$project$HeroCreate$initialLevel,
+					_user$project$HeroCreate$initialAttributes(_p10)));
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	}
+};
+var _user$project$HeroCreate$Model = F2(
+	function (a, b) {
+		return {heroClass: a, heroName: b};
+	});
+var _user$project$HeroCreate$init = function (context) {
+	return A2(_user$project$HeroCreate$Model, _elm_lang$core$Maybe$Nothing, '');
+};
+var _user$project$HeroCreate$ClassOption = F2(
+	function (a, b) {
+		return {label: a, msg: b};
+	});
+var _user$project$HeroCreate$AlmostMagic = function (a) {
+	return {ctor: 'AlmostMagic', _0: a};
+};
+var _user$project$HeroCreate$AlmostRanged = function (a) {
+	return {ctor: 'AlmostRanged', _0: a};
+};
+var _user$project$HeroCreate$AlmostMelee = function (a) {
+	return {ctor: 'AlmostMelee', _0: a};
+};
+var _user$project$HeroCreate$getEmptyMainClass = function (maybeAlmostHero) {
+	var _p11 = maybeAlmostHero;
+	if (_p11.ctor === 'Just') {
+		var _p12 = _p11._0;
+		switch (_p12.ctor) {
+			case 'AlmostMelee':
+				return _user$project$HeroCreate$AlmostMelee(_elm_lang$core$Maybe$Nothing);
+			case 'AlmostRanged':
+				return _user$project$HeroCreate$AlmostRanged(_elm_lang$core$Maybe$Nothing);
+			default:
+				return _user$project$HeroCreate$AlmostMagic(_elm_lang$core$Maybe$Nothing);
+		}
+	} else {
+		var _p13 = _elm_lang$core$Debug$log(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'HeroCreate: \'getEmptyMainClass\' was designed to only be used to reset subclasses.',
+				A2(_elm_lang$core$Basics_ops['++'], ' No subclass was found, so the \'AlmostMelee\' default is being used.', 'Maybe maybe I should not have nested my maybes...')));
+		return _user$project$HeroCreate$AlmostMelee(_elm_lang$core$Maybe$Nothing);
+	}
+};
+var _user$project$HeroCreate$update = F2(
+	function (msg, model) {
+		var _p14 = msg;
+		switch (_p14.ctor) {
+			case 'GoToMainMenu':
+				return {
+					ctor: '_Tuple3',
+					_0: model,
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _user$project$Utilities$getCmd(
+						_user$project$Context$GotoPage(_user$project$Context$MainMenu))
+				};
+			case 'MainClassSelected':
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroClass: _elm_lang$core$Maybe$Just(_p14._0)
+						}));
+			case 'MeleeSubclassSelected':
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroClass: _elm_lang$core$Maybe$Just(
+								_user$project$HeroCreate$AlmostMelee(
+									_elm_lang$core$Maybe$Just(_p14._0)))
+						}));
+			case 'RangedSubclassSelected':
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroClass: _elm_lang$core$Maybe$Just(
+								_user$project$HeroCreate$AlmostRanged(
+									_elm_lang$core$Maybe$Just(_p14._0)))
+						}));
+			case 'MagicSubclassSelected':
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroClass: _elm_lang$core$Maybe$Just(
+								_user$project$HeroCreate$AlmostMagic(
+									_elm_lang$core$Maybe$Just(_p14._0)))
+						}));
+			case 'MainClassReset':
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{heroClass: _elm_lang$core$Maybe$Nothing}));
+			case 'SubclassReset':
+				var heroMainClass = _user$project$HeroCreate$getEmptyMainClass(model.heroClass);
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroClass: _elm_lang$core$Maybe$Just(heroMainClass)
+						}));
+			case 'NameChanged':
+				return _user$project$Utilities$just(
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{heroName: _p14._0}));
+			default:
+				var _p15 = _user$project$HeroCreate$getHero(model);
+				if (_p15.ctor === 'Just') {
+					return {
+						ctor: '_Tuple3',
+						_0: model,
+						_1: _elm_lang$core$Platform_Cmd$none,
+						_2: _user$project$Utilities$getCmd(
+							_user$project$Context$AddHero(_p15._0))
+					};
+				} else {
+					var _p16 = _elm_lang$core$Debug$log('Hero could not be created...');
+					return _user$project$Utilities$just(model);
+				}
+		}
+	});
+var _user$project$HeroCreate$HasSubclassSelected = {ctor: 'HasSubclassSelected'};
+var _user$project$HeroCreate$HasMainClassSelected = {ctor: 'HasMainClassSelected'};
+var _user$project$HeroCreate$HasNothingSelected = {ctor: 'HasNothingSelected'};
+var _user$project$HeroCreate$getCreateStep = function (model) {
+	var _p17 = model.heroClass;
+	if (_p17.ctor === 'Nothing') {
+		return _user$project$HeroCreate$HasNothingSelected;
+	} else {
+		var _p18 = _p17._0;
+		switch (_p18.ctor) {
+			case 'AlmostMelee':
+				var _p19 = _p18._0;
+				if (_p19.ctor === 'Just') {
+					return _user$project$HeroCreate$HasSubclassSelected;
+				} else {
+					return _user$project$HeroCreate$HasMainClassSelected;
+				}
+			case 'AlmostRanged':
+				var _p20 = _p18._0;
+				if (_p20.ctor === 'Just') {
+					return _user$project$HeroCreate$HasSubclassSelected;
+				} else {
+					return _user$project$HeroCreate$HasMainClassSelected;
+				}
+			default:
+				var _p21 = _p18._0;
+				if (_p21.ctor === 'Just') {
+					return _user$project$HeroCreate$HasSubclassSelected;
+				} else {
+					return _user$project$HeroCreate$HasMainClassSelected;
+				}
+		}
+	}
+};
+var _user$project$HeroCreate$viewNavbarLabel = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('navbar-label'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$h4,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(
+						function () {
+							var _p22 = _user$project$HeroCreate$getCreateStep(model);
+							switch (_p22.ctor) {
+								case 'HasNothingSelected':
+									return 'What\'s your style?';
+								case 'HasMainClassSelected':
+									return 'What\'s your class?';
+								default:
+									return 'What\'s your name?';
+							}
+						}()),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		});
+};
+var _user$project$HeroCreate$GoToMainMenu = {ctor: 'GoToMainMenu'};
+var _user$project$HeroCreate$CreateHero = {ctor: 'CreateHero'};
+var _user$project$HeroCreate$NameChanged = function (a) {
+	return {ctor: 'NameChanged', _0: a};
+};
+var _user$project$HeroCreate$viewNameOptions = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('name-form'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$label,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$class('label'),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Name'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$input,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class('input'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$type_('text'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$value(model.heroName),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html_Events$onInput(_user$project$HeroCreate$NameChanged),
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					},
+					{ctor: '[]'}),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$button,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$class('button'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onClick(_user$project$HeroCreate$CreateHero),
+								_1: {ctor: '[]'}
+							}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('Let\'s goooo!'),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
+			}
+		});
+};
+var _user$project$HeroCreate$SubclassReset = {ctor: 'SubclassReset'};
+var _user$project$HeroCreate$MainClassReset = {ctor: 'MainClassReset'};
+var _user$project$HeroCreate$viewBackButton = function (model) {
+	var onClickMsg = function () {
+		var _p23 = _user$project$HeroCreate$getCreateStep(model);
+		switch (_p23.ctor) {
+			case 'HasNothingSelected':
+				return _user$project$HeroCreate$GoToMainMenu;
+			case 'HasMainClassSelected':
+				return _user$project$HeroCreate$MainClassReset;
+			default:
+				return _user$project$HeroCreate$SubclassReset;
+		}
+	}();
+	return A2(
+		_elm_lang$html$Html$button,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('button back-button'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html_Events$onClick(onClickMsg),
+				_1: {ctor: '[]'}
+			}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$i,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$class('fa fa-arrow-left'),
+					_1: {ctor: '[]'}
+				},
+				{ctor: '[]'}),
+			_1: {ctor: '[]'}
+		});
+};
+var _user$project$HeroCreate$viewNavbar = function (model) {
+	return A2(
+		_elm_lang$html$Html$nav,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('navbar'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: _user$project$HeroCreate$viewBackButton(model),
+			_1: {
+				ctor: '::',
+				_0: _user$project$HeroCreate$viewNavbarLabel(model),
+				_1: {ctor: '[]'}
+			}
+		});
+};
+var _user$project$HeroCreate$MagicSubclassSelected = function (a) {
+	return {ctor: 'MagicSubclassSelected', _0: a};
+};
+var _user$project$HeroCreate$magicSubclassOptions = {
+	ctor: '::',
+	_0: A2(
+		_user$project$HeroCreate$ClassOption,
+		'Wizard',
+		_user$project$HeroCreate$MagicSubclassSelected(_user$project$Types$Wizard)),
+	_1: {
+		ctor: '::',
+		_0: A2(
+			_user$project$HeroCreate$ClassOption,
+			'Healer',
+			_user$project$HeroCreate$MagicSubclassSelected(_user$project$Types$Healer)),
+		_1: {ctor: '[]'}
+	}
+};
+var _user$project$HeroCreate$RangedSubclassSelected = function (a) {
+	return {ctor: 'RangedSubclassSelected', _0: a};
+};
+var _user$project$HeroCreate$rangedSubclassOptions = {
+	ctor: '::',
+	_0: A2(
+		_user$project$HeroCreate$ClassOption,
+		'Ranger',
+		_user$project$HeroCreate$RangedSubclassSelected(_user$project$Types$Ranger)),
+	_1: {
+		ctor: '::',
+		_0: A2(
+			_user$project$HeroCreate$ClassOption,
+			'Axethrower',
+			_user$project$HeroCreate$RangedSubclassSelected(_user$project$Types$Axethrower)),
+		_1: {ctor: '[]'}
+	}
+};
+var _user$project$HeroCreate$MeleeSubclassSelected = function (a) {
+	return {ctor: 'MeleeSubclassSelected', _0: a};
+};
+var _user$project$HeroCreate$meleeSubclassOptions = {
+	ctor: '::',
+	_0: A2(
+		_user$project$HeroCreate$ClassOption,
+		'Knight',
+		_user$project$HeroCreate$MeleeSubclassSelected(_user$project$Types$Knight)),
+	_1: {
+		ctor: '::',
+		_0: A2(
+			_user$project$HeroCreate$ClassOption,
+			'Rogue',
+			_user$project$HeroCreate$MeleeSubclassSelected(_user$project$Types$Rogue)),
+		_1: {ctor: '[]'}
+	}
+};
+var _user$project$HeroCreate$viewSubclassOptions = function (model) {
+	var _p24 = _user$project$HeroCreate$getEmptyMainClass(model.heroClass);
+	switch (_p24.ctor) {
+		case 'AlmostMelee':
+			return A2(_user$project$HeroCreate$viewClassOptions, _user$project$HeroCreate$meleeSubclassOptions, model);
+		case 'AlmostRanged':
+			return A2(_user$project$HeroCreate$viewClassOptions, _user$project$HeroCreate$rangedSubclassOptions, model);
+		default:
+			return A2(_user$project$HeroCreate$viewClassOptions, _user$project$HeroCreate$magicSubclassOptions, model);
+	}
+};
+var _user$project$HeroCreate$MainClassSelected = function (a) {
+	return {ctor: 'MainClassSelected', _0: a};
+};
+var _user$project$HeroCreate$mainClassOptions = {
+	ctor: '::',
+	_0: A2(
+		_user$project$HeroCreate$ClassOption,
+		'Melee',
+		_user$project$HeroCreate$MainClassSelected(
+			_user$project$HeroCreate$AlmostMelee(_elm_lang$core$Maybe$Nothing))),
+	_1: {
+		ctor: '::',
+		_0: A2(
+			_user$project$HeroCreate$ClassOption,
+			'Ranged',
+			_user$project$HeroCreate$MainClassSelected(
+				_user$project$HeroCreate$AlmostRanged(_elm_lang$core$Maybe$Nothing))),
+		_1: {
+			ctor: '::',
+			_0: A2(
+				_user$project$HeroCreate$ClassOption,
+				'Magic',
+				_user$project$HeroCreate$MainClassSelected(
+					_user$project$HeroCreate$AlmostMagic(_elm_lang$core$Maybe$Nothing))),
+			_1: {ctor: '[]'}
+		}
+	}
+};
+var _user$project$HeroCreate$viewMainClassOptions = _user$project$HeroCreate$viewClassOptions(_user$project$HeroCreate$mainClassOptions);
+var _user$project$HeroCreate$viewOptions = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('options-section'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: function () {
+				var _p25 = _user$project$HeroCreate$getCreateStep(model);
+				switch (_p25.ctor) {
+					case 'HasNothingSelected':
+						return _user$project$HeroCreate$viewMainClassOptions(model);
+					case 'HasMainClassSelected':
+						return _user$project$HeroCreate$viewSubclassOptions(model);
+					default:
+						return _user$project$HeroCreate$viewNameOptions(model);
+				}
+			}(),
+			_1: {ctor: '[]'}
+		});
+};
 var _user$project$HeroCreate$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -12479,146 +13072,17 @@ var _user$project$HeroCreate$view = function (model) {
 		},
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html$text('Hero Create'),
-			_1: {ctor: '[]'}
+			_0: _user$project$HeroCreate$viewNavbar(model),
+			_1: {
+				ctor: '::',
+				_0: _user$project$HeroCreate$viewOptions(model),
+				_1: {
+					ctor: '::',
+					_0: _user$project$HeroCreate$viewFooter(model),
+					_1: {ctor: '[]'}
+				}
+			}
 		});
-};
-var _user$project$HeroCreate$initialAttributes = function ($class) {
-	var _p0 = $class;
-	switch (_p0.ctor) {
-		case 'Melee':
-			var _p1 = _p0._0;
-			if (_p1.ctor === 'Knight') {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
-			} else {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
-			}
-		case 'Ranged':
-			var _p2 = _p0._0;
-			if (_p2.ctor === 'Ranger') {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
-			} else {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
-			}
-		default:
-			var _p3 = _p0._0;
-			if (_p3.ctor === 'Wizard') {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
-			} else {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
-			}
-	}
-};
-var _user$project$HeroCreate$Model = F2(
-	function (a, b) {
-		return {heroClass: a, heroName: b};
-	});
-var _user$project$HeroCreate$init = function (context) {
-	return A2(_user$project$HeroCreate$Model, _elm_lang$core$Maybe$Nothing, _elm_lang$core$Maybe$Nothing);
-};
-var _user$project$HeroCreate$AlmostMagic = function (a) {
-	return {ctor: 'AlmostMagic', _0: a};
-};
-var _user$project$HeroCreate$AlmostRanged = function (a) {
-	return {ctor: 'AlmostRanged', _0: a};
-};
-var _user$project$HeroCreate$AlmostMelee = function (a) {
-	return {ctor: 'AlmostMelee', _0: a};
-};
-var _user$project$HeroCreate$update = F2(
-	function (msg, model) {
-		var _p4 = msg;
-		switch (_p4.ctor) {
-			case 'MainClassSelected':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(_p4._0)
-						}));
-			case 'MainClassReset':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{heroClass: _elm_lang$core$Maybe$Nothing}));
-			case 'MeleeSubclassSelected':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(
-								_user$project$HeroCreate$AlmostMelee(
-									_elm_lang$core$Maybe$Just(_p4._0)))
-						}));
-			case 'MeleeSubclassReset':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(
-								_user$project$HeroCreate$AlmostMelee(_elm_lang$core$Maybe$Nothing))
-						}));
-			case 'RangedSubclassSelected':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(
-								_user$project$HeroCreate$AlmostRanged(
-									_elm_lang$core$Maybe$Just(_p4._0)))
-						}));
-			case 'RangedSubclassReset':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(
-								_user$project$HeroCreate$AlmostRanged(_elm_lang$core$Maybe$Nothing))
-						}));
-			case 'MagicSubclassSelected':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(
-								_user$project$HeroCreate$AlmostMagic(
-									_elm_lang$core$Maybe$Just(_p4._0)))
-						}));
-			case 'MagicSubclassReset':
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroClass: _elm_lang$core$Maybe$Just(
-								_user$project$HeroCreate$AlmostMagic(_elm_lang$core$Maybe$Nothing))
-						}));
-			default:
-				return _user$project$Utilities$just(
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroName: _elm_lang$core$Maybe$Just(_p4._0)
-						}));
-		}
-	});
-var _user$project$HeroCreate$NameSubmit = function (a) {
-	return {ctor: 'NameSubmit', _0: a};
-};
-var _user$project$HeroCreate$MagicSubclassReset = {ctor: 'MagicSubclassReset'};
-var _user$project$HeroCreate$MagicSubclassSelected = function (a) {
-	return {ctor: 'MagicSubclassSelected', _0: a};
-};
-var _user$project$HeroCreate$RangedSubclassReset = {ctor: 'RangedSubclassReset'};
-var _user$project$HeroCreate$RangedSubclassSelected = function (a) {
-	return {ctor: 'RangedSubclassSelected', _0: a};
-};
-var _user$project$HeroCreate$MeleeSubclassReset = {ctor: 'MeleeSubclassReset'};
-var _user$project$HeroCreate$MeleeSubclassSelected = function (a) {
-	return {ctor: 'MeleeSubclassSelected', _0: a};
-};
-var _user$project$HeroCreate$MainClassReset = {ctor: 'MainClassReset'};
-var _user$project$HeroCreate$MainClassSelected = function (a) {
-	return {ctor: 'MainClassSelected', _0: a};
 };
 
 var _user$project$MainMenu$viewMenuButton = function (menuButton) {
@@ -12644,18 +13108,29 @@ var _user$project$MainMenu$viewMenuButtons = function (model) {
 		_elm_lang$html$Html$div,
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$class('menu-buttons'),
+			_0: _elm_lang$html$Html_Attributes$class('action-section'),
 			_1: {ctor: '[]'}
 		},
 		A2(_elm_lang$core$List$map, _user$project$MainMenu$viewMenuButton, model.buttons));
 };
 var _user$project$MainMenu$viewTitle = function (model) {
 	return A2(
-		_elm_lang$html$Html$h1,
-		{ctor: '[]'},
+		_elm_lang$html$Html$div,
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html$text(model.title),
+			_0: _elm_lang$html$Html_Attributes$class('title-section'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$h2,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(model.title),
+					_1: {ctor: '[]'}
+				}),
 			_1: {ctor: '[]'}
 		});
 };
@@ -12664,15 +13139,37 @@ var _user$project$MainMenu$view = function (model) {
 		_elm_lang$html$Html$div,
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$class('main-menu'),
+			_0: _elm_lang$html$Html_Attributes$class('main-menu container row'),
 			_1: {ctor: '[]'}
 		},
 		{
 			ctor: '::',
-			_0: _user$project$MainMenu$viewTitle(model),
+			_0: A2(
+				_elm_lang$html$Html$div,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$class('column'),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _user$project$MainMenu$viewTitle(model),
+					_1: {ctor: '[]'}
+				}),
 			_1: {
 				ctor: '::',
-				_0: _user$project$MainMenu$viewMenuButtons(model),
+				_0: A2(
+					_elm_lang$html$Html$div,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class('column align-start'),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _user$project$MainMenu$viewMenuButtons(model),
+						_1: {ctor: '[]'}
+					}),
 				_1: {ctor: '[]'}
 			}
 		});
@@ -12680,13 +13177,32 @@ var _user$project$MainMenu$view = function (model) {
 var _user$project$MainMenu$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
-		return {
-			ctor: '_Tuple3',
-			_0: model,
-			_1: _elm_lang$core$Platform_Cmd$none,
-			_2: _user$project$Utilities$getCmd(
-				_user$project$Context$InitPage(_user$project$Context$HeroCreate))
-		};
+		if (_p0.ctor === 'CreateHeroClicked') {
+			return {
+				ctor: '_Tuple3',
+				_0: model,
+				_1: _elm_lang$core$Platform_Cmd$none,
+				_2: _user$project$Utilities$getCmd(
+					_user$project$Context$InitPage(_user$project$Context$HeroCreate))
+			};
+		} else {
+			return {
+				ctor: '_Tuple3',
+				_0: model,
+				_1: _elm_lang$core$Platform_Cmd$none,
+				_2: _user$project$Utilities$getCmd(
+					_user$project$Context$PlayAs(_p0._0))
+			};
+		}
+	});
+var _user$project$MainMenu$isActiveHero = F2(
+	function (maybeActiveHero, hero) {
+		var _p1 = maybeActiveHero;
+		if (_p1.ctor === 'Just') {
+			return _elm_lang$core$Native_Utils.eq(_p1._0, hero);
+		} else {
+			return false;
+		}
 	});
 var _user$project$MainMenu$MenuButton = F2(
 	function (a, b) {
@@ -12696,21 +13212,57 @@ var _user$project$MainMenu$Model = F2(
 	function (a, b) {
 		return {title: a, buttons: b};
 	});
-var _user$project$MainMenu$NewGameClicked = {ctor: 'NewGameClicked'};
+var _user$project$MainMenu$PlayAs = function (a) {
+	return {ctor: 'PlayAs', _0: a};
+};
+var _user$project$MainMenu$getButtonForHero = function (hero) {
+	return A2(
+		_user$project$MainMenu$MenuButton,
+		A2(_elm_lang$core$Basics_ops['++'], 'Play as ', hero.name),
+		_user$project$MainMenu$PlayAs(hero));
+};
+var _user$project$MainMenu$CreateHeroClicked = {ctor: 'CreateHeroClicked'};
+var _user$project$MainMenu$initialButtons = {
+	ctor: '::',
+	_0: A2(_user$project$MainMenu$MenuButton, 'Create your hero!', _user$project$MainMenu$CreateHeroClicked),
+	_1: {ctor: '[]'}
+};
+var _user$project$MainMenu$initButtons = function (context) {
+	var heroButtons = A2(
+		_elm_lang$core$Debug$log,
+		'map',
+		A2(
+			_elm_lang$core$List$map,
+			_user$project$MainMenu$getButtonForHero,
+			A2(
+				_elm_lang$core$Debug$log,
+				'unpartition',
+				_user$project$Utilities$unpartition(
+					A2(
+						_elm_lang$core$Debug$log,
+						'partition',
+						A2(
+							_elm_lang$core$List$partition,
+							_user$project$MainMenu$isActiveHero(context.hero),
+							context.heroes))))));
+	return A2(_elm_lang$core$Basics_ops['++'], _user$project$MainMenu$initialButtons, heroButtons);
+};
 var _user$project$MainMenu$init = function (context) {
 	return A2(
 		_user$project$MainMenu$Model,
 		'Slay the Things!',
-		{
-			ctor: '::',
-			_0: A2(_user$project$MainMenu$MenuButton, 'New Game', _user$project$MainMenu$NewGameClicked),
-			_1: {ctor: '[]'}
-		});
+		_user$project$MainMenu$initButtons(context));
 };
 
 var _user$project$Main$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$none;
 };
+var _user$project$Main$updateCombatViewPageModel = F2(
+	function (model, pageModels) {
+		return _elm_lang$core$Native_Utils.update(
+			pageModels,
+			{combatView: model});
+	});
 var _user$project$Main$updateHeroCreatePageModel = F2(
 	function (model, pageModels) {
 		return _elm_lang$core$Native_Utils.update(
@@ -12726,12 +13278,16 @@ var _user$project$Main$updateMainMenuPageModel = F2(
 var _user$project$Main$initPageModel = F2(
 	function (page, context) {
 		var _p0 = page;
-		if (_p0.ctor === 'MainMenu') {
-			return _user$project$Main$updateMainMenuPageModel(
-				_user$project$MainMenu$init(context));
-		} else {
-			return _user$project$Main$updateHeroCreatePageModel(
-				_user$project$HeroCreate$init(context));
+		switch (_p0.ctor) {
+			case 'MainMenu':
+				return _user$project$Main$updateMainMenuPageModel(
+					_user$project$MainMenu$init(context));
+			case 'HeroCreate':
+				return _user$project$Main$updateHeroCreatePageModel(
+					_user$project$HeroCreate$init(context));
+			default:
+				return _user$project$Main$updateCombatViewPageModel(
+					_user$project$CombatView$init(context));
 		}
 	});
 var _user$project$Main$initContext = A3(
@@ -12743,15 +13299,16 @@ var _user$project$Main$Model = F2(
 	function (a, b) {
 		return {context: a, pageModels: b};
 	});
-var _user$project$Main$PageModels = F2(
-	function (a, b) {
-		return {mainMenu: a, heroCreate: b};
+var _user$project$Main$PageModels = F3(
+	function (a, b, c) {
+		return {mainMenu: a, heroCreate: b, combatView: c};
 	});
 var _user$project$Main$initPageModels = function (context) {
-	return A2(
+	return A3(
 		_user$project$Main$PageModels,
 		_user$project$MainMenu$init(context),
-		_user$project$HeroCreate$init(context));
+		_user$project$HeroCreate$init(context),
+		_user$project$CombatView$init(context));
 };
 var _user$project$Main$init = function () {
 	var model = A2(
@@ -12763,6 +13320,9 @@ var _user$project$Main$init = function () {
 		model,
 		{ctor: '[]'});
 }();
+var _user$project$Main$CombatViewMsg = function (a) {
+	return {ctor: 'CombatViewMsg', _0: a};
+};
 var _user$project$Main$HeroCreateMsg = function (a) {
 	return {ctor: 'HeroCreateMsg', _0: a};
 };
@@ -12772,16 +13332,22 @@ var _user$project$Main$MainMenuMsg = function (a) {
 var _user$project$Main$viewPage = function (model) {
 	var models = model.pageModels;
 	var _p1 = model.context.page;
-	if (_p1.ctor === 'MainMenu') {
-		return A2(
-			_elm_lang$html$Html$map,
-			_user$project$Main$MainMenuMsg,
-			_user$project$MainMenu$view(models.mainMenu));
-	} else {
-		return A2(
-			_elm_lang$html$Html$map,
-			_user$project$Main$HeroCreateMsg,
-			_user$project$HeroCreate$view(models.heroCreate));
+	switch (_p1.ctor) {
+		case 'MainMenu':
+			return A2(
+				_elm_lang$html$Html$map,
+				_user$project$Main$MainMenuMsg,
+				_user$project$MainMenu$view(models.mainMenu));
+		case 'HeroCreate':
+			return A2(
+				_elm_lang$html$Html$map,
+				_user$project$Main$HeroCreateMsg,
+				_user$project$HeroCreate$view(models.heroCreate));
+		default:
+			return A2(
+				_elm_lang$html$Html$map,
+				_user$project$Main$CombatViewMsg,
+				_user$project$CombatView$view(models.combatView));
 	}
 };
 var _user$project$Main$view = function (model) {
@@ -12827,30 +13393,77 @@ var _user$project$Main$update = F2(
 		switch (_p4.ctor) {
 			case 'ContextMsg':
 				var _p5 = _p4._0;
-				if (_p5.ctor === 'GotoPage') {
-					var newContext = _elm_lang$core$Native_Utils.update(
-						context,
-						{page: _p5._0});
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{context: newContext}),
-						{ctor: '[]'});
-				} else {
-					var _p6 = _p5._0;
-					var newContext = _elm_lang$core$Native_Utils.update(
-						context,
-						{page: _p6});
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
+				switch (_p5.ctor) {
+					case 'GotoPage':
+						var newContext = _elm_lang$core$Native_Utils.update(
+							context,
+							{page: _p5._0});
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{context: newContext}),
+							{ctor: '[]'});
+					case 'InitPage':
+						var _p6 = _p5._0;
+						var newContext = _elm_lang$core$Native_Utils.update(
+							context,
+							{page: _p6});
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{
+									context: newContext,
+									pageModels: A3(_user$project$Main$initPageModel, _p6, context, model.pageModels)
+								}),
+							{ctor: '[]'});
+					case 'AddHero':
+						var _p7 = _p5._0;
+						var newContext = _elm_lang$core$Native_Utils.update(
+							context,
 							{
-								context: newContext,
-								pageModels: A3(_user$project$Main$initPageModel, _p6, context, model.pageModels)
-							}),
-						{ctor: '[]'});
+								heroes: A2(
+									_elm_lang$core$Basics_ops['++'],
+									context.heroes,
+									{
+										ctor: '::',
+										_0: _p7,
+										_1: {ctor: '[]'}
+									}),
+								hero: _elm_lang$core$Maybe$Just(_p7)
+							});
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{context: newContext}),
+							{
+								ctor: '::',
+								_0: _user$project$Utilities$getCmd(
+									_user$project$Main$ContextMsg(
+										_user$project$Context$InitPage(_user$project$Context$MainMenu))),
+								_1: {ctor: '[]'}
+							});
+					default:
+						var newContext = _elm_lang$core$Native_Utils.update(
+							context,
+							{
+								hero: _elm_lang$core$Maybe$Just(_p5._0),
+								page: _user$project$Context$CombatView
+							});
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{context: newContext}),
+							{
+								ctor: '::',
+								_0: _user$project$Utilities$getCmd(
+									_user$project$Main$ContextMsg(
+										_user$project$Context$InitPage(_user$project$Context$CombatView))),
+								_1: {ctor: '[]'}
+							});
 				}
 			case 'MainMenuMsg':
 				return A4(
@@ -12859,12 +13472,19 @@ var _user$project$Main$update = F2(
 					_user$project$Main$MainMenuMsg,
 					_user$project$Main$updateMainMenuPageModel,
 					model);
-			default:
+			case 'HeroCreateMsg':
 				return A4(
 					_user$project$Main$localUpdate,
 					A2(_user$project$HeroCreate$update, _p4._0, model.pageModels.heroCreate),
 					_user$project$Main$HeroCreateMsg,
 					_user$project$Main$updateHeroCreatePageModel,
+					model);
+			default:
+				return A4(
+					_user$project$Main$localUpdate,
+					A2(_user$project$CombatView$update, _p4._0, model.pageModels.combatView),
+					_user$project$Main$CombatViewMsg,
+					_user$project$Main$updateCombatViewPageModel,
 					model);
 		}
 	});
@@ -12874,7 +13494,7 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"HeroCreate.AlmostHeroClass":{"args":[],"tags":{"AlmostMagic":["Maybe.Maybe Types.MagicSubclass"],"AlmostMelee":["Maybe.Maybe Types.MeleeSubclass"],"AlmostRanged":["Maybe.Maybe Types.RangedSubclass"]}},"Context.Page":{"args":[],"tags":{"MainMenu":[],"HeroCreate":[]}},"Types.MeleeSubclass":{"args":[],"tags":{"Knight":[],"Rogue":[]}},"HeroCreate.Msg":{"args":[],"tags":{"MagicSubclassSelected":["Types.MagicSubclass"],"NameSubmit":["String"],"MeleeSubclassReset":[],"RangedSubclassReset":[],"MainClassSelected":["HeroCreate.AlmostHeroClass"],"MeleeSubclassSelected":["Types.MeleeSubclass"],"MainClassReset":[],"RangedSubclassSelected":["Types.RangedSubclass"],"MagicSubclassReset":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Types.MagicSubclass":{"args":[],"tags":{"Healer":[],"Wizard":[]}},"Types.RangedSubclass":{"args":[],"tags":{"Axethrower":[],"Ranger":[]}},"Main.Msg":{"args":[],"tags":{"ContextMsg":["Context.Msg"],"MainMenuMsg":["MainMenu.Msg"],"HeroCreateMsg":["HeroCreate.Msg"]}},"MainMenu.Msg":{"args":[],"tags":{"NewGameClicked":[]}},"Context.Msg":{"args":[],"tags":{"GotoPage":["Context.Page"],"InitPage":["Context.Page"]}}},"aliases":{},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Context.Page":{"args":[],"tags":{"MainMenu":[],"CombatView":[],"HeroCreate":[]}},"Types.MeleeSubclass":{"args":[],"tags":{"Knight":[],"Rogue":[]}},"HeroCreate.Msg":{"args":[],"tags":{"MagicSubclassSelected":["Types.MagicSubclass"],"NameChanged":["String"],"GoToMainMenu":[],"CreateHero":[],"MainClassSelected":["HeroCreate.MainClass"],"MeleeSubclassSelected":["Types.MeleeSubclass"],"SubclassReset":[],"MainClassReset":[],"RangedSubclassSelected":["Types.RangedSubclass"]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Types.MagicSubclass":{"args":[],"tags":{"Healer":[],"Wizard":[]}},"CombatView.Msg":{"args":[],"tags":{"NoOp":[]}},"Types.RangedSubclass":{"args":[],"tags":{"Axethrower":[],"Ranger":[]}},"Main.Msg":{"args":[],"tags":{"ContextMsg":["Context.Msg"],"MainMenuMsg":["MainMenu.Msg"],"CombatViewMsg":["CombatView.Msg"],"HeroCreateMsg":["HeroCreate.Msg"]}},"MainMenu.Msg":{"args":[],"tags":{"CreateHeroClicked":[],"PlayAs":["Types.Hero"]}},"HeroCreate.MainClass":{"args":[],"tags":{"AlmostMagic":["Maybe.Maybe Types.MagicSubclass"],"AlmostMelee":["Maybe.Maybe Types.MeleeSubclass"],"AlmostRanged":["Maybe.Maybe Types.RangedSubclass"]}},"Context.Msg":{"args":[],"tags":{"GotoPage":["Context.Page"],"InitPage":["Context.Page"],"AddHero":["Types.Hero"],"PlayAs":["Types.Hero"]}},"Types.HeroClass":{"args":[],"tags":{"Magic":["Types.MagicSubclass"],"Melee":["Types.MeleeSubclass"],"Ranged":["Types.RangedSubclass"]}}},"aliases":{"Types.Hero":{"args":[],"type":"{ name : String , class : Types.HeroClass , level : Int , attributes : Types.HeroAttributes }"},"Types.HeroAttributes":{"args":[],"type":"{ damage : Int, health : Int, speed : Int, magic : Int }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

@@ -2,9 +2,11 @@ module Main exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Utilities exposing (getCmd)
 import Context exposing (Context)
 import MainMenu
 import HeroCreate
+import CombatView
 
 
 type alias Model =
@@ -17,11 +19,13 @@ type Msg
     = ContextMsg Context.Msg
     | MainMenuMsg MainMenu.Msg
     | HeroCreateMsg HeroCreate.Msg
+    | CombatViewMsg CombatView.Msg
 
 
 type alias PageModels =
     { mainMenu : MainMenu.Model
     , heroCreate : HeroCreate.Model
+    , combatView : CombatView.Model
     }
 
 
@@ -55,6 +59,7 @@ initPageModels context =
     PageModels
         (MainMenu.init context)
         (HeroCreate.init context)
+        (CombatView.init context)
 
 
 main : Program Never Model Msg
@@ -94,6 +99,26 @@ update msg model =
                             }
                                 ! []
 
+                    Context.AddHero hero ->
+                        let
+                            newContext =
+                                { context
+                                    | heroes = context.heroes ++ [ hero ]
+                                    , hero = Just hero
+                                }
+                        in
+                            { model | context = newContext } ! [ getCmd <| ContextMsg <| Context.InitPage Context.MainMenu ]
+
+                    Context.PlayAs hero ->
+                        let
+                            newContext =
+                                { context
+                                    | hero = Just hero
+                                    , page = Context.CombatView
+                                }
+                        in
+                            { model | context = newContext } ! [ getCmd <| ContextMsg <| Context.InitPage Context.CombatView ]
+
             MainMenuMsg msg ->
                 localUpdate
                     (MainMenu.update msg model.pageModels.mainMenu)
@@ -106,6 +131,13 @@ update msg model =
                     (HeroCreate.update msg model.pageModels.heroCreate)
                     HeroCreateMsg
                     updateHeroCreatePageModel
+                    model
+
+            CombatViewMsg msg ->
+                localUpdate
+                    (CombatView.update msg model.pageModels.combatView)
+                    CombatViewMsg
+                    updateCombatViewPageModel
                     model
 
 
@@ -131,6 +163,11 @@ updateHeroCreatePageModel model pageModels =
     { pageModels | heroCreate = model }
 
 
+updateCombatViewPageModel : CombatView.Model -> PageModels -> PageModels
+updateCombatViewPageModel model pageModels =
+    { pageModels | combatView = model }
+
+
 initPageModel : Context.Page -> Context -> PageModels -> PageModels
 initPageModel page context =
     case page of
@@ -139,6 +176,9 @@ initPageModel page context =
 
         Context.HeroCreate ->
             updateHeroCreatePageModel (HeroCreate.init context)
+
+        Context.CombatView ->
+            updateCombatViewPageModel (CombatView.init context)
 
 
 view : Model -> Html Msg
@@ -160,6 +200,9 @@ viewPage model =
 
             Context.HeroCreate ->
                 Html.map HeroCreateMsg (HeroCreate.view models.heroCreate)
+
+            Context.CombatView ->
+                Html.map CombatViewMsg (CombatView.view models.combatView)
 
 
 subscriptions : Model -> Sub Msg
