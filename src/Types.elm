@@ -3,11 +3,24 @@ module Types exposing (..)
 -- HERO
 
 
+type alias Enemy =
+    { type_ : EnemyType
+    , level : Int
+    , attributes : Attributes
+    }
+
+
+type EnemyType
+    = Skeleton
+    | GoblinArcher
+    | Wolf
+
+
 type alias Hero =
     { name : String
     , class : HeroClass
     , level : Int
-    , attributes : HeroAttributes
+    , attributes : Attributes
     }
 
 
@@ -32,7 +45,7 @@ type MagicSubclass
     | Cleric
 
 
-type alias HeroAttributes =
+type alias Attributes =
     { damage : Int
     , health : Int
     , speed : Int
