@@ -321,7 +321,7 @@ viewHeroImage model =
     in
         div [ class "image-container" ]
             [ img
-                [ src <| "/public/img/64x64/heroes/" ++ imageFilename ++ ".png"
+                [ src <| "public/img/64x64/heroes/" ++ imageFilename ++ ".png"
                 , class "hero-preview slideRight"
                 ]
                 []
@@ -330,15 +330,16 @@ viewHeroImage model =
 
 getFileName : HeroClass -> String
 getFileName heroClass =
-    case heroClass of
-        Melee subclass ->
-            toString subclass
+    String.toLower <|
+        case heroClass of
+            Melee subclass ->
+                toString subclass
 
-        Ranged subclass ->
-            toString subclass
+            Ranged subclass ->
+                toString subclass
 
-        Magic subclass ->
-            toString subclass
+            Magic subclass ->
+                toString subclass
 
 
 type alias ClassOption =
