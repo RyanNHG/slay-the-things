@@ -1,25 +1,36 @@
 module Types exposing (..)
 
--- HERO
+-- ENEMY
 
 
 type alias Enemy =
     { type_ : EnemyType
     , level : Int
+    , status : Status
     , attributes : Attributes
     }
 
 
 type EnemyType
+    = MeleeRange EnemyClass
+    | RangedRange EnemyClass
+
+
+type EnemyClass
     = Skeleton
     | GoblinArcher
     | Wolf
+
+
+
+-- HERO
 
 
 type alias Hero =
     { name : String
     , class : HeroClass
     , level : Int
+    , status : Status
     , attributes : Attributes
     }
 
@@ -43,6 +54,22 @@ type RangedSubclass
 type MagicSubclass
     = Wizard
     | Cleric
+
+
+
+-- ACTOR
+
+
+type alias Status =
+    { health : Int
+    , mana : Int
+    , effects : List StatusEffect
+    }
+
+
+type StatusEffect
+    = Stunned
+    | Dead
 
 
 type alias Attributes =

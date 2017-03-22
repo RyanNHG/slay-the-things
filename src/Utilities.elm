@@ -33,7 +33,7 @@ getHeroImageFilepath : HeroClass -> String
 getHeroImageFilepath heroClass =
     let
         heroFilename =
-            getHeroImageFilename heroClass
+            String.toLower <| getSubclassName heroClass
     in
         rootImageFilepath ++ "heroes/" ++ heroFilename ++ ".png"
 
@@ -42,27 +42,65 @@ getEnemyImageFilepath : EnemyType -> String
 getEnemyImageFilepath enemyType =
     let
         enemyFilename =
-            getEnemyImageFilename enemyType
+            String.toLower <| getEnemyTypeName enemyType
     in
         rootImageFilepath ++ "enemies/" ++ enemyFilename ++ ".png"
 
 
-getHeroImageFilename : HeroClass -> String
-getHeroImageFilename heroClass =
-    String.toLower <|
-        case heroClass of
-            Melee subclass ->
-                toString subclass
+getSubclassName : HeroClass -> String
+getSubclassName heroClass =
+    case heroClass of
+        Melee subclass ->
+            toString subclass
 
-            Ranged subclass ->
-                toString subclass
+        Ranged subclass ->
+            toString subclass
 
-            Magic subclass ->
-                toString subclass
+        Magic subclass ->
+            toString subclass
 
 
-getEnemyImageFilename : EnemyType -> String
-getEnemyImageFilename enemyType =
-    enemyType
-        |> toString
-        |> String.toLower
+getEnemyTypeName : EnemyType -> String
+getEnemyTypeName enemyType =
+    case enemyType of
+        MeleeRange subclass ->
+            toString subclass
+
+        RangedRange subclass ->
+            toString subclass
+
+
+initStatus : Attributes -> Status
+initStatus attributes =
+    Status
+        attributes.health
+        attributes.magic
+        []
+
+
+initialAttributes : HeroClass -> Attributes
+initialAttributes class =
+    case class of
+        Melee subclass ->
+            case subclass of
+                Knight ->
+                    Attributes 4 4 3 4
+
+                Rogue ->
+                    Attributes 4 4 6 4
+
+        Ranged subclass ->
+            case subclass of
+                Ranger ->
+                    Attributes 4 4 9 4
+
+                Axethrower ->
+                    Attributes 4 4 4 4
+
+        Magic subclass ->
+            case subclass of
+                Wizard ->
+                    Attributes 4 4 4 4
+
+                Cleric ->
+                    Attributes 4 4 4 4
