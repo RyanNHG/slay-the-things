@@ -51,32 +51,32 @@ initialLevel =
     1
 
 
-initialAttributes : HeroClass -> HeroAttributes
+initialAttributes : HeroClass -> Attributes
 initialAttributes class =
     case class of
         Melee subclass ->
             case subclass of
                 Knight ->
-                    HeroAttributes 4 4 4 4
+                    Attributes 4 4 4 4
 
                 Rogue ->
-                    HeroAttributes 4 4 4 4
+                    Attributes 4 4 4 4
 
         Ranged subclass ->
             case subclass of
                 Ranger ->
-                    HeroAttributes 4 4 4 4
+                    Attributes 4 4 4 4
 
                 Axethrower ->
-                    HeroAttributes 4 4 4 4
+                    Attributes 4 4 4 4
 
         Magic subclass ->
             case subclass of
                 Wizard ->
-                    HeroAttributes 4 4 4 4
+                    Attributes 4 4 4 4
 
                 Cleric ->
-                    HeroAttributes 4 4 4 4
+                    Attributes 4 4 4 4
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Cmd Context.Msg )
@@ -316,30 +316,16 @@ viewOptions model =
 viewHeroImage : Model -> Html Msg
 viewHeroImage model =
     let
-        imageFilename =
-            getFileName (Maybe.withDefault (Melee Knight) (getHeroClass model.heroClass))
+        heroClass =
+            (Maybe.withDefault (Melee Knight) (getHeroClass model.heroClass))
     in
         div [ class "image-container" ]
             [ img
-                [ src <| "public/img/64x64/heroes/" ++ imageFilename ++ ".png"
+                [ src <| Utilities.getHeroImageFilepath heroClass
                 , class "hero-preview slideRight"
                 ]
                 []
             ]
-
-
-getFileName : HeroClass -> String
-getFileName heroClass =
-    String.toLower <|
-        case heroClass of
-            Melee subclass ->
-                toString subclass
-
-            Ranged subclass ->
-                toString subclass
-
-            Magic subclass ->
-                toString subclass
 
 
 type alias ClassOption =

@@ -4387,6 +4387,759 @@ var _elm_lang$core$Task$cmdMap = F2(
 	});
 _elm_lang$core$Native_Platform.effectManagers['Task'] = {pkg: 'elm-lang/core', init: _elm_lang$core$Task$init, onEffects: _elm_lang$core$Task$onEffects, onSelfMsg: _elm_lang$core$Task$onSelfMsg, tag: 'cmd', cmdMap: _elm_lang$core$Task$cmdMap};
 
+	// Handle leaf level.
+	if (a.height === 0)
+	{
+		var newA = { ctor:'_Array', height:0 };
+		newA.table = a.table.slice(from, a.table.length + 1);
+		return newA;
+	}
+
+	// Slice the left recursively.
+	var left = getSlot(from, a);
+	var sliced = sliceLeft(from - (left > 0 ? a.lengths[left - 1] : 0), a.table[left]);
+
+	// Maybe the a node is not even needed, as sliced contains the whole slice.
+	if (left === a.table.length - 1)
+	{
+		return sliced;
+	}
+
+	// Create new node.
+	var newA = {
+		ctor: '_Array',
+		height: a.height,
+		table: a.table.slice(left, a.table.length + 1),
+		lengths: new Array(a.table.length - left)
+	};
+	newA.table[0] = sliced;
+	var len = 0;
+	for (var i = 0; i < newA.table.length; i++)
+	{
+		len += length(newA.table[i]);
+		newA.lengths[i] = len;
+	}
+
+	return newA;
+}
+
+// Appends two trees.
+function append(a,b)
+{
+	if (a.table.length === 0)
+	{
+		return b;
+	}
+	if (b.table.length === 0)
+	{
+		return a;
+	}
+
+	var c = append_(a, b);
+
+	// Check if both nodes can be crunshed together.
+	if (c[0].table.length + c[1].table.length <= M)
+	{
+		if (c[0].table.length === 0)
+		{
+			return c[1];
+		}
+		if (c[1].table.length === 0)
+		{
+			return c[0];
+		}
+
+		// Adjust .table and .lengths
+		c[0].table = c[0].table.concat(c[1].table);
+		if (c[0].height > 0)
+		{
+			var len = length(c[0]);
+			for (var i = 0; i < c[1].lengths.length; i++)
+			{
+				c[1].lengths[i] += len;
+			}
+			c[0].lengths = c[0].lengths.concat(c[1].lengths);
+		}
+
+		return c[0];
+	}
+
+	if (c[0].height > 0)
+	{
+		var toRemove = calcToRemove(a, b);
+		if (toRemove > E)
+		{
+			c = shuffle(c[0], c[1], toRemove);
+		}
+	}
+
+	return siblise(c[0], c[1]);
+}
+
+// Returns an array of two nodes; right and left. One node _may_ be empty.
+function append_(a, b)
+{
+	if (a.height === 0 && b.height === 0)
+	{
+		return [a, b];
+	}
+
+	if (a.height !== 1 || b.height !== 1)
+	{
+		if (a.height === b.height)
+		{
+			a = nodeCopy(a);
+			b = nodeCopy(b);
+			var appended = append_(botRight(a), botLeft(b));
+
+			insertRight(a, appended[1]);
+			insertLeft(b, appended[0]);
+		}
+		else if (a.height > b.height)
+		{
+			a = nodeCopy(a);
+			var appended = append_(botRight(a), b);
+
+			insertRight(a, appended[0]);
+			b = parentise(appended[1], appended[1].height + 1);
+		}
+		else
+		{
+			b = nodeCopy(b);
+			var appended = append_(a, botLeft(b));
+
+			var left = appended[0].table.length === 0 ? 0 : 1;
+			var right = left === 0 ? 1 : 0;
+			insertLeft(b, appended[left]);
+			a = parentise(appended[right], appended[right].height + 1);
+		}
+	}
+
+	// Check if balancing is needed and return based on that.
+	if (a.table.length === 0 || b.table.length === 0)
+	{
+		return [a, b];
+	}
+
+	var toRemove = calcToRemove(a, b);
+	if (toRemove <= E)
+	{
+		return [a, b];
+	}
+	return shuffle(a, b, toRemove);
+}
+
+// Helperfunctions for append_. Replaces a child node at the side of the parent.
+function insertRight(parent, node)
+{
+	var index = parent.table.length - 1;
+	parent.table[index] = node;
+	parent.lengths[index] = length(node);
+	parent.lengths[index] += index > 0 ? parent.lengths[index - 1] : 0;
+}
+
+function insertLeft(parent, node)
+{
+	if (node.table.length > 0)
+	{
+		parent.table[0] = node;
+		parent.lengths[0] = length(node);
+
+		var len = length(parent.table[0]);
+		for (var i = 1; i < parent.lengths.length; i++)
+		{
+			len += length(parent.table[i]);
+			parent.lengths[i] = len;
+		}
+	}
+	else
+	{
+		parent.table.shift();
+		for (var i = 1; i < parent.lengths.length; i++)
+		{
+			parent.lengths[i] = parent.lengths[i] - parent.lengths[0];
+		}
+		parent.lengths.shift();
+	}
+}
+
+// Returns the extra search steps for E. Refer to the paper.
+function calcToRemove(a, b)
+{
+	var subLengths = 0;
+	for (var i = 0; i < a.table.length; i++)
+	{
+		subLengths += a.table[i].table.length;
+	}
+	for (var i = 0; i < b.table.length; i++)
+	{
+		subLengths += b.table[i].table.length;
+	}
+
+	var toRemove = a.table.length + b.table.length;
+	return toRemove - (Math.floor((subLengths - 1) / M) + 1);
+}
+
+// get2, set2 and saveSlot are helpers for accessing elements over two arrays.
+function get2(a, b, index)
+{
+	return index < a.length
+		? a[index]
+		: b[index - a.length];
+}
+
+function set2(a, b, index, value)
+{
+	if (index < a.length)
+	{
+		a[index] = value;
+	}
+	else
+	{
+		b[index - a.length] = value;
+	}
+}
+
+function saveSlot(a, b, index, slot)
+{
+	set2(a.table, b.table, index, slot);
+
+	var l = (index === 0 || index === a.lengths.length)
+		? 0
+		: get2(a.lengths, a.lengths, index - 1);
+
+	set2(a.lengths, b.lengths, index, l + length(slot));
+}
+
+// Creates a node or leaf with a given length at their arrays for perfomance.
+// Is only used by shuffle.
+function createNode(h, length)
+{
+	if (length < 0)
+	{
+		length = 0;
+	}
+	var a = {
+		ctor: '_Array',
+		height: h,
+		table: new Array(length)
+	};
+	if (h > 0)
+	{
+		a.lengths = new Array(length);
+	}
+	return a;
+}
+
+// Returns an array of two balanced nodes.
+function shuffle(a, b, toRemove)
+{
+	var newA = createNode(a.height, Math.min(M, a.table.length + b.table.length - toRemove));
+	var newB = createNode(a.height, newA.table.length - (a.table.length + b.table.length - toRemove));
+
+	// Skip the slots with size M. More precise: copy the slot references
+	// to the new node
+	var read = 0;
+	while (get2(a.table, b.table, read).table.length % M === 0)
+	{
+		set2(newA.table, newB.table, read, get2(a.table, b.table, read));
+		set2(newA.lengths, newB.lengths, read, get2(a.lengths, b.lengths, read));
+		read++;
+	}
+
+	// Pulling items from left to right, caching in a slot before writing
+	// it into the new nodes.
+	var write = read;
+	var slot = new createNode(a.height - 1, 0);
+	var from = 0;
+
+	// If the current slot is still containing data, then there will be at
+	// least one more write, so we do not break this loop yet.
+	while (read - write - (slot.table.length > 0 ? 1 : 0) < toRemove)
+	{
+		// Find out the max possible items for copying.
+		var source = get2(a.table, b.table, read);
+		var to = Math.min(M - slot.table.length, source.table.length);
+
+		// Copy and adjust size table.
+		slot.table = slot.table.concat(source.table.slice(from, to));
+		if (slot.height > 0)
+		{
+			var len = slot.lengths.length;
+			for (var i = len; i < len + to - from; i++)
+			{
+				slot.lengths[i] = length(slot.table[i]);
+				slot.lengths[i] += (i > 0 ? slot.lengths[i - 1] : 0);
+			}
+		}
+
+		from += to;
+
+		// Only proceed to next slots[i] if the current one was
+		// fully copied.
+		if (source.table.length <= to)
+		{
+			read++; from = 0;
+		}
+
+		// Only create a new slot if the current one is filled up.
+		if (slot.table.length === M)
+		{
+			saveSlot(newA, newB, write, slot);
+			slot = createNode(a.height - 1, 0);
+			write++;
+		}
+	}
+
+	// Cleanup after the loop. Copy the last slot into the new nodes.
+	if (slot.table.length > 0)
+	{
+		saveSlot(newA, newB, write, slot);
+		write++;
+	}
+
+	// Shift the untouched slots to the left
+	while (read < a.table.length + b.table.length )
+	{
+		saveSlot(newA, newB, write, get2(a.table, b.table, read));
+		read++;
+		write++;
+	}
+
+	return [newA, newB];
+}
+
+// Navigation functions
+function botRight(a)
+{
+	return a.table[a.table.length - 1];
+}
+function botLeft(a)
+{
+	return a.table[0];
+}
+
+// Copies a node for updating. Note that you should not use this if
+// only updating only one of "table" or "lengths" for performance reasons.
+function nodeCopy(a)
+{
+	var newA = {
+		ctor: '_Array',
+		height: a.height,
+		table: a.table.slice()
+	};
+	if (a.height > 0)
+	{
+		newA.lengths = a.lengths.slice();
+	}
+	return newA;
+}
+
+// Returns how many items are in the tree.
+function length(array)
+{
+	if (array.height === 0)
+	{
+		return array.table.length;
+	}
+	else
+	{
+		return array.lengths[array.lengths.length - 1];
+	}
+}
+
+// Calculates in which slot of "table" the item probably is, then
+// find the exact slot via forward searching in  "lengths". Returns the index.
+function getSlot(i, a)
+{
+	var slot = i >> (5 * a.height);
+	while (a.lengths[slot] <= i)
+	{
+		slot++;
+	}
+	return slot;
+}
+
+// Recursively creates a tree with a given height containing
+// only the given item.
+function create(item, h)
+{
+	if (h === 0)
+	{
+		return {
+			ctor: '_Array',
+			height: 0,
+			table: [item]
+		};
+	}
+	return {
+		ctor: '_Array',
+		height: h,
+		table: [create(item, h - 1)],
+		lengths: [1]
+	};
+}
+
+// Recursively creates a tree that contains the given tree.
+function parentise(tree, h)
+{
+	if (h === tree.height)
+	{
+		return tree;
+	}
+
+	return {
+		ctor: '_Array',
+		height: h,
+		table: [parentise(tree, h - 1)],
+		lengths: [length(tree)]
+	};
+}
+
+// Emphasizes blood brotherhood beneath two trees.
+function siblise(a, b)
+{
+	return {
+		ctor: '_Array',
+		height: a.height + 1,
+		table: [a, b],
+		lengths: [length(a), length(a) + length(b)]
+	};
+}
+
+function toJSArray(a)
+{
+	var jsArray = new Array(length(a));
+	toJSArray_(jsArray, 0, a);
+	return jsArray;
+}
+
+function toJSArray_(jsArray, i, a)
+{
+	for (var t = 0; t < a.table.length; t++)
+	{
+		if (a.height === 0)
+		{
+			jsArray[i + t] = a.table[t];
+		}
+		else
+		{
+			var inc = t === 0 ? 0 : a.lengths[t - 1];
+			toJSArray_(jsArray, i + inc, a.table[t]);
+		}
+	}
+}
+
+function fromJSArray(jsArray)
+{
+	if (jsArray.length === 0)
+	{
+		return empty;
+	}
+	var h = Math.floor(Math.log(jsArray.length) / Math.log(M));
+	return fromJSArray_(jsArray, h, 0, jsArray.length);
+}
+
+function fromJSArray_(jsArray, h, from, to)
+{
+	if (h === 0)
+	{
+		return {
+			ctor: '_Array',
+			height: 0,
+			table: jsArray.slice(from, to)
+		};
+	}
+
+	var step = Math.pow(M, h);
+	var table = new Array(Math.ceil((to - from) / step));
+	var lengths = new Array(table.length);
+	for (var i = 0; i < table.length; i++)
+	{
+		table[i] = fromJSArray_(jsArray, h - 1, from + (i * step), Math.min(from + ((i + 1) * step), to));
+		lengths[i] = length(table[i]) + (i > 0 ? lengths[i - 1] : 0);
+	}
+	return {
+		ctor: '_Array',
+		height: h,
+		table: table,
+		lengths: lengths
+	};
+}
+
+return {
+	empty: empty,
+	fromList: fromList,
+	toList: toList,
+	initialize: F2(initialize),
+	append: F2(append),
+	push: F2(push),
+	slice: F3(slice),
+	get: F2(get),
+	set: F3(set),
+	map: F2(map),
+	indexedMap: F2(indexedMap),
+	foldl: F3(foldl),
+	foldr: F3(foldr),
+	length: length,
+
+	toJSArray: toJSArray,
+	fromJSArray: fromJSArray
+};
+
+}();
+var _elm_lang$core$Array$append = _elm_lang$core$Native_Array.append;
+var _elm_lang$core$Array$length = _elm_lang$core$Native_Array.length;
+var _elm_lang$core$Array$isEmpty = function (array) {
+	return _elm_lang$core$Native_Utils.eq(
+		_elm_lang$core$Array$length(array),
+		0);
+};
+var _elm_lang$core$Array$slice = _elm_lang$core$Native_Array.slice;
+var _elm_lang$core$Array$set = _elm_lang$core$Native_Array.set;
+var _elm_lang$core$Array$get = F2(
+	function (i, array) {
+		return ((_elm_lang$core$Native_Utils.cmp(0, i) < 1) && (_elm_lang$core$Native_Utils.cmp(
+			i,
+			_elm_lang$core$Native_Array.length(array)) < 0)) ? _elm_lang$core$Maybe$Just(
+			A2(_elm_lang$core$Native_Array.get, i, array)) : _elm_lang$core$Maybe$Nothing;
+	});
+var _elm_lang$core$Array$push = _elm_lang$core$Native_Array.push;
+var _elm_lang$core$Array$empty = _elm_lang$core$Native_Array.empty;
+var _elm_lang$core$Array$filter = F2(
+	function (isOkay, arr) {
+		var update = F2(
+			function (x, xs) {
+				return isOkay(x) ? A2(_elm_lang$core$Native_Array.push, x, xs) : xs;
+			});
+		return A3(_elm_lang$core$Native_Array.foldl, update, _elm_lang$core$Native_Array.empty, arr);
+	});
+var _elm_lang$core$Array$foldr = _elm_lang$core$Native_Array.foldr;
+var _elm_lang$core$Array$foldl = _elm_lang$core$Native_Array.foldl;
+var _elm_lang$core$Array$indexedMap = _elm_lang$core$Native_Array.indexedMap;
+var _elm_lang$core$Array$map = _elm_lang$core$Native_Array.map;
+var _elm_lang$core$Array$toIndexedList = function (array) {
+	return A3(
+		_elm_lang$core$List$map2,
+		F2(
+			function (v0, v1) {
+				return {ctor: '_Tuple2', _0: v0, _1: v1};
+			}),
+		A2(
+			_elm_lang$core$List$range,
+			0,
+			_elm_lang$core$Native_Array.length(array) - 1),
+		_elm_lang$core$Native_Array.toList(array));
+};
+var _elm_lang$core$Array$toList = _elm_lang$core$Native_Array.toList;
+var _elm_lang$core$Array$fromList = _elm_lang$core$Native_Array.fromList;
+var _elm_lang$core$Array$initialize = _elm_lang$core$Native_Array.initialize;
+var _elm_lang$core$Array$repeat = F2(
+	function (n, e) {
+		return A2(
+			_elm_lang$core$Array$initialize,
+			n,
+			_elm_lang$core$Basics$always(e));
+	});
+var _elm_lang$core$Array$Array = {ctor: 'Array'};
+
+var _elm_lang$core$Task$onError = _elm_lang$core$Native_Scheduler.onError;
+var _elm_lang$core$Task$andThen = _elm_lang$core$Native_Scheduler.andThen;
+var _elm_lang$core$Task$spawnCmd = F2(
+	function (router, _p0) {
+		var _p1 = _p0;
+		return _elm_lang$core$Native_Scheduler.spawn(
+			A2(
+				_elm_lang$core$Task$andThen,
+				_elm_lang$core$Platform$sendToApp(router),
+				_p1._0));
+	});
+var _elm_lang$core$Task$fail = _elm_lang$core$Native_Scheduler.fail;
+var _elm_lang$core$Task$mapError = F2(
+	function (convert, task) {
+		return A2(
+			_elm_lang$core$Task$onError,
+			function (_p2) {
+				return _elm_lang$core$Task$fail(
+					convert(_p2));
+			},
+			task);
+	});
+var _elm_lang$core$Task$succeed = _elm_lang$core$Native_Scheduler.succeed;
+var _elm_lang$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			function (a) {
+				return _elm_lang$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var _elm_lang$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			function (a) {
+				return A2(
+					_elm_lang$core$Task$andThen,
+					function (b) {
+						return _elm_lang$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var _elm_lang$core$Task$map3 = F4(
+	function (func, taskA, taskB, taskC) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			function (a) {
+				return A2(
+					_elm_lang$core$Task$andThen,
+					function (b) {
+						return A2(
+							_elm_lang$core$Task$andThen,
+							function (c) {
+								return _elm_lang$core$Task$succeed(
+									A3(func, a, b, c));
+							},
+							taskC);
+					},
+					taskB);
+			},
+			taskA);
+	});
+var _elm_lang$core$Task$map4 = F5(
+	function (func, taskA, taskB, taskC, taskD) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			function (a) {
+				return A2(
+					_elm_lang$core$Task$andThen,
+					function (b) {
+						return A2(
+							_elm_lang$core$Task$andThen,
+							function (c) {
+								return A2(
+									_elm_lang$core$Task$andThen,
+									function (d) {
+										return _elm_lang$core$Task$succeed(
+											A4(func, a, b, c, d));
+									},
+									taskD);
+							},
+							taskC);
+					},
+					taskB);
+			},
+			taskA);
+	});
+var _elm_lang$core$Task$map5 = F6(
+	function (func, taskA, taskB, taskC, taskD, taskE) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			function (a) {
+				return A2(
+					_elm_lang$core$Task$andThen,
+					function (b) {
+						return A2(
+							_elm_lang$core$Task$andThen,
+							function (c) {
+								return A2(
+									_elm_lang$core$Task$andThen,
+									function (d) {
+										return A2(
+											_elm_lang$core$Task$andThen,
+											function (e) {
+												return _elm_lang$core$Task$succeed(
+													A5(func, a, b, c, d, e));
+											},
+											taskE);
+									},
+									taskD);
+							},
+							taskC);
+					},
+					taskB);
+			},
+			taskA);
+	});
+var _elm_lang$core$Task$sequence = function (tasks) {
+	var _p3 = tasks;
+	if (_p3.ctor === '[]') {
+		return _elm_lang$core$Task$succeed(
+			{ctor: '[]'});
+	} else {
+		return A3(
+			_elm_lang$core$Task$map2,
+			F2(
+				function (x, y) {
+					return {ctor: '::', _0: x, _1: y};
+				}),
+			_p3._0,
+			_elm_lang$core$Task$sequence(_p3._1));
+	}
+};
+var _elm_lang$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			_elm_lang$core$Task$map,
+			function (_p4) {
+				return {ctor: '_Tuple0'};
+			},
+			_elm_lang$core$Task$sequence(
+				A2(
+					_elm_lang$core$List$map,
+					_elm_lang$core$Task$spawnCmd(router),
+					commands)));
+	});
+var _elm_lang$core$Task$init = _elm_lang$core$Task$succeed(
+	{ctor: '_Tuple0'});
+var _elm_lang$core$Task$onSelfMsg = F3(
+	function (_p7, _p6, _p5) {
+		return _elm_lang$core$Task$succeed(
+			{ctor: '_Tuple0'});
+	});
+var _elm_lang$core$Task$command = _elm_lang$core$Native_Platform.leaf('Task');
+var _elm_lang$core$Task$Perform = function (a) {
+	return {ctor: 'Perform', _0: a};
+};
+var _elm_lang$core$Task$perform = F2(
+	function (toMessage, task) {
+		return _elm_lang$core$Task$command(
+			_elm_lang$core$Task$Perform(
+				A2(_elm_lang$core$Task$map, toMessage, task)));
+	});
+var _elm_lang$core$Task$attempt = F2(
+	function (resultToMessage, task) {
+		return _elm_lang$core$Task$command(
+			_elm_lang$core$Task$Perform(
+				A2(
+					_elm_lang$core$Task$onError,
+					function (_p8) {
+						return _elm_lang$core$Task$succeed(
+							resultToMessage(
+								_elm_lang$core$Result$Err(_p8)));
+					},
+					A2(
+						_elm_lang$core$Task$andThen,
+						function (_p9) {
+							return _elm_lang$core$Task$succeed(
+								resultToMessage(
+									_elm_lang$core$Result$Ok(_p9)));
+						},
+						task))));
+	});
+var _elm_lang$core$Task$cmdMap = F2(
+	function (tagger, _p10) {
+		var _p11 = _p10;
+		return _elm_lang$core$Task$Perform(
+			A2(_elm_lang$core$Task$map, tagger, _p11._0));
+	});
+_elm_lang$core$Native_Platform.effectManagers['Task'] = {pkg: 'elm-lang/core', init: _elm_lang$core$Task$init, onEffects: _elm_lang$core$Task$onEffects, onSelfMsg: _elm_lang$core$Task$onSelfMsg, tag: 'cmd', cmdMap: _elm_lang$core$Task$cmdMap};
+
 var _elm_lang$core$Dict$foldr = F3(
 	function (f, acc, t) {
 		foldr:
@@ -6394,14 +7147,7 @@ function applyEvents(domNode, eventNode, events)
 		}
 	}
 
-	domNode.elm_handlers = allHandlers;
-}
-
-function makeEventHandler(eventNode, info)
-{
-	function eventHandler(event)
-	{
-		var info = eventHandler.info;
+//import Maybe, Native.Array, Native.List, Native.Utils, Result //
 
 		var value = A2(_elm_lang$core$Native_Json.run, info.decoder, event);
 
@@ -6959,15 +7705,10 @@ function insertNode(changes, localPatches, key, vnode, bIndex, inserts)
 {
 	var entry = changes[key];
 
-	// never seen this key before
-	if (typeof entry === 'undefined')
-	{
-		entry = {
-			tag: 'insert',
-			vnode: vnode,
-			index: bIndex,
-			data: undefined
-		};
+var _elm_lang$virtual_dom$VirtualDom_Debug$wrap;
+var _elm_lang$virtual_dom$VirtualDom_Debug$wrapWithFlags;
+
+var _elm_lang$virtual_dom$Native_VirtualDom = function() {
 
 		inserts.push({ index: bIndex, entry: entry });
 		changes[key] = entry;
@@ -12416,14 +13157,21 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
+var _user$project$Types$Enemy = F3(
+	function (a, b, c) {
+		return {type_: a, level: b, attributes: c};
+	});
 var _user$project$Types$Hero = F4(
 	function (a, b, c, d) {
 		return {name: a, $class: b, level: c, attributes: d};
 	});
-var _user$project$Types$HeroAttributes = F4(
+var _user$project$Types$Attributes = F4(
 	function (a, b, c, d) {
 		return {damage: a, health: b, speed: c, magic: d};
 	});
+var _user$project$Types$Wolf = {ctor: 'Wolf'};
+var _user$project$Types$GoblinArcher = {ctor: 'GoblinArcher'};
+var _user$project$Types$Skeleton = {ctor: 'Skeleton'};
 var _user$project$Types$Magic = function (a) {
 	return {ctor: 'Magic', _0: a};
 };
@@ -12460,18 +13208,57 @@ var _user$project$Context$CombatView = {ctor: 'CombatView'};
 var _user$project$Context$HeroCreate = {ctor: 'HeroCreate'};
 var _user$project$Context$MainMenu = {ctor: 'MainMenu'};
 
-var _user$project$Utilities$unpartition = function (_p0) {
-	var _p1 = _p0;
-	return A2(_elm_lang$core$Basics_ops['++'], _p1._0, _p1._1);
+var _user$project$Utilities$getEnemyImageFilename = function (enemyType) {
+	return _elm_lang$core$String$toLower(
+		_elm_lang$core$Basics$toString(enemyType));
+};
+var _user$project$Utilities$getHeroImageFilename = function (heroClass) {
+	return _elm_lang$core$String$toLower(
+		function () {
+			var _p0 = heroClass;
+			switch (_p0.ctor) {
+				case 'Melee':
+					return _elm_lang$core$Basics$toString(_p0._0);
+				case 'Ranged':
+					return _elm_lang$core$Basics$toString(_p0._0);
+				default:
+					return _elm_lang$core$Basics$toString(_p0._0);
+			}
+		}());
+};
+var _user$project$Utilities$rootImageFilepath = 'https://raw.githubusercontent.com/RyanNHG/slay-the-things/gh-pages/public/img/64x64/';
+var _user$project$Utilities$getHeroImageFilepath = function (heroClass) {
+	var heroFilename = _user$project$Utilities$getHeroImageFilename(heroClass);
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_user$project$Utilities$rootImageFilepath,
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'heroes/',
+			A2(_elm_lang$core$Basics_ops['++'], heroFilename, '.png')));
+};
+var _user$project$Utilities$getEnemyImageFilepath = function (enemyType) {
+	var enemyFilename = _user$project$Utilities$getEnemyImageFilename(enemyType);
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_user$project$Utilities$rootImageFilepath,
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'enemies/',
+			A2(_elm_lang$core$Basics_ops['++'], enemyFilename, '.png')));
+};
+var _user$project$Utilities$unpartition = function (_p1) {
+	var _p2 = _p1;
+	return A2(_elm_lang$core$Basics_ops['++'], _p2._0, _p2._1);
 };
 var _user$project$Utilities$just = function (model) {
 	return {ctor: '_Tuple3', _0: model, _1: _elm_lang$core$Platform_Cmd$none, _2: _elm_lang$core$Platform_Cmd$none};
 };
 var _user$project$Utilities_ops = _user$project$Utilities_ops || {};
 _user$project$Utilities_ops['!!'] = F2(
-	function (model, _p2) {
-		var _p3 = _p2;
-		return {ctor: '_Tuple3', _0: model, _1: _p3._0, _2: _p3._1};
+	function (model, _p3) {
+		var _p4 = _p3;
+		return {ctor: '_Tuple3', _0: model, _1: _p4._0, _2: _p4._1};
 	});
 var _user$project$Utilities$getCmd = function (msg) {
 	return A2(
@@ -12480,10 +13267,146 @@ var _user$project$Utilities$getCmd = function (msg) {
 		_elm_lang$core$Task$succeed(msg));
 };
 
+var _user$project$CombatView$getActorImageFilePath = function (actor) {
+	var _p0 = actor.actorType;
+	if (_p0.ctor === 'HeroActor') {
+		return _user$project$Utilities$getHeroImageFilepath(_p0._0.$class);
+	} else {
+		return _user$project$Utilities$getEnemyImageFilepath(_p0._0.type_);
+	}
+};
+var _user$project$CombatView$getActorsAt = F2(
+	function (coordinates, model) {
+		return A2(
+			_elm_lang$core$List$map,
+			function (actor) {
+				return A2(
+					_elm_lang$html$Html$div,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class('actor'),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$img,
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$src(
+									_user$project$CombatView$getActorImageFilePath(actor)),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html_Attributes$class(''),
+									_1: {ctor: '[]'}
+								}
+							},
+							{ctor: '[]'}),
+						_1: {ctor: '[]'}
+					});
+			},
+			A2(
+				_elm_lang$core$List$filter,
+				function (actor) {
+					return _elm_lang$core$Native_Utils.eq(actor.coordinates, coordinates);
+				},
+				model.actors));
+	});
+var _user$project$CombatView$viewCombatBoardCell = F3(
+	function (model, x, y) {
+		var actors = A2(
+			_user$project$CombatView$getActorsAt,
+			{ctor: '_Tuple2', _0: x, _1: y},
+			model);
+		return A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$class('board-cell'),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$div,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class('actors'),
+						_1: {ctor: '[]'}
+					},
+					actors),
+				_1: {ctor: '[]'}
+			});
+	});
+var _user$project$CombatView$viewCombatBoardRow = F3(
+	function (model, numCells, xIndex) {
+		var cells = A2(
+			_elm_lang$core$List$map,
+			A2(_user$project$CombatView$viewCombatBoardCell, model, xIndex),
+			A2(_elm_lang$core$List$range, 1, numCells));
+		return A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$class('board-row'),
+				_1: {ctor: '[]'}
+			},
+			cells);
+	});
+var _user$project$CombatView$getStyle = function (_p1) {
+	var _p2 = _p1;
+	var _p4 = _p2._0;
+	var _p3 = _p2._1;
+	return (_elm_lang$core$Native_Utils.cmp(_p4, _p3) > 0) ? {
+		ctor: '::',
+		_0: {
+			ctor: '_Tuple2',
+			_0: 'width',
+			_1: A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Basics$toString(100),
+				'vmin')
+		},
+		_1: {
+			ctor: '::',
+			_0: {
+				ctor: '_Tuple2',
+				_0: 'height',
+				_1: A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(((100 * _p3) / _p4) | 0),
+					'vmin')
+			},
+			_1: {ctor: '[]'}
+		}
+	} : {
+		ctor: '::',
+		_0: {
+			ctor: '_Tuple2',
+			_0: 'height',
+			_1: A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Basics$toString(100),
+				'vmin')
+		},
+		_1: {
+			ctor: '::',
+			_0: {
+				ctor: '_Tuple2',
+				_0: 'width',
+				_1: A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(((100 * _p4) / _p3) | 0),
+					'vmin')
+			},
+			_1: {ctor: '[]'}
+		}
+	};
+};
 var _user$project$CombatView$update = F2(
 	function (msg, model) {
-		var _p0 = msg;
-		if (_p0.ctor === 'NoOp') {
+		var _p5 = msg;
+		if (_p5.ctor === 'NoOp') {
 			return _user$project$Utilities$just(model);
 		} else {
 			return {
@@ -12498,17 +13421,29 @@ var _user$project$CombatView$update = F2(
 var _user$project$CombatView$getName = function (hero) {
 	return hero.name;
 };
-var _user$project$CombatView$Model = F2(
-	function (a, b) {
-		return {title: a, heroName: b};
-	});
-var _user$project$CombatView$init = function (context) {
+var _user$project$CombatView$boardDimensions = {ctor: '_Tuple2', _0: 7, _1: 5};
+var _user$project$CombatView$viewCombatBoard = function (model) {
+	var _p6 = _user$project$CombatView$boardDimensions;
+	var numRows = _p6._0;
+	var numCols = _p6._1;
+	var rows = A2(
+		_elm_lang$core$List$map,
+		A2(_user$project$CombatView$viewCombatBoardRow, model, numCols),
+		A2(_elm_lang$core$List$range, 1, numRows));
 	return A2(
-		_user$project$CombatView$Model,
-		'That\'s not ready yet!',
-		A2(_elm_lang$core$Maybe$map, _user$project$CombatView$getName, context.hero));
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('board'),
+			_1: {
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$style(
+					_user$project$CombatView$getStyle(_user$project$CombatView$boardDimensions)),
+				_1: {ctor: '[]'}
+			}
+		},
+		rows);
 };
-var _user$project$CombatView$GoToMainMenu = {ctor: 'GoToMainMenu'};
 var _user$project$CombatView$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -12519,58 +13454,82 @@ var _user$project$CombatView$view = function (model) {
 		},
 		{
 			ctor: '::',
-			_0: A2(
-				_elm_lang$html$Html$h3,
-				{ctor: '[]'},
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html$text(
-						function () {
-							var _p1 = model.heroName;
-							if (_p1.ctor === 'Just') {
-								return A2(
-									_elm_lang$core$Basics_ops['++'],
-									'Sorry, ',
-									A2(_elm_lang$core$Basics_ops['++'], _p1._0, '!'));
-							} else {
-								return '';
-							}
-						}()),
-					_1: {ctor: '[]'}
-				}),
-			_1: {
-				ctor: '::',
-				_0: A2(
-					_elm_lang$html$Html$h4,
-					{ctor: '[]'},
-					{
-						ctor: '::',
-						_0: _elm_lang$html$Html$text(model.title),
-						_1: {ctor: '[]'}
-					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_elm_lang$html$Html$button,
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html_Attributes$class('button'),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$html$Html_Events$onClick(_user$project$CombatView$GoToMainMenu),
-								_1: {ctor: '[]'}
-							}
-						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text('Make another hero?'),
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				}
-			}
+			_0: _user$project$CombatView$viewCombatBoard(model),
+			_1: {ctor: '[]'}
 		});
 };
+var _user$project$CombatView$Model = F3(
+	function (a, b, c) {
+		return {title: a, heroName: b, actors: c};
+	});
+var _user$project$CombatView$Actor = F2(
+	function (a, b) {
+		return {actorType: a, coordinates: b};
+	});
+var _user$project$CombatView$EnemyActor = function (a) {
+	return {ctor: 'EnemyActor', _0: a};
+};
+var _user$project$CombatView$HeroActor = function (a) {
+	return {ctor: 'HeroActor', _0: a};
+};
+var _user$project$CombatView$initCombatForHero = function (hero) {
+	var enemyCoordinates = {
+		ctor: '::',
+		_0: {ctor: '_Tuple2', _0: 6, _1: 2},
+		_1: {
+			ctor: '::',
+			_0: {ctor: '_Tuple2', _0: 6, _1: 4},
+			_1: {ctor: '[]'}
+		}
+	};
+	var enemyType = _user$project$Types$Skeleton;
+	var enemy = A3(
+		_user$project$Types$Enemy,
+		enemyType,
+		1,
+		A4(_user$project$Types$Attributes, 4, 4, 4, 4));
+	var enemiesActors = {
+		ctor: '::',
+		_0: A2(
+			_user$project$CombatView$Actor,
+			_user$project$CombatView$EnemyActor(enemy),
+			{ctor: '_Tuple2', _0: 6, _1: 2}),
+		_1: {
+			ctor: '::',
+			_0: A2(
+				_user$project$CombatView$Actor,
+				_user$project$CombatView$EnemyActor(enemy),
+				{ctor: '_Tuple2', _0: 6, _1: 4}),
+			_1: {ctor: '[]'}
+		}
+	};
+	var enemyCount = 2;
+	var heroActors = {
+		ctor: '::',
+		_0: A2(
+			_user$project$CombatView$Actor,
+			_user$project$CombatView$HeroActor(hero),
+			{ctor: '_Tuple2', _0: 2, _1: 3}),
+		_1: {ctor: '[]'}
+	};
+	return A2(_elm_lang$core$Basics_ops['++'], heroActors, enemiesActors);
+};
+var _user$project$CombatView$initActors = function (maybeHero) {
+	var _p7 = maybeHero;
+	if (_p7.ctor === 'Just') {
+		return _user$project$CombatView$initCombatForHero(_p7._0);
+	} else {
+		return {ctor: '[]'};
+	}
+};
+var _user$project$CombatView$init = function (context) {
+	return A3(
+		_user$project$CombatView$Model,
+		'That\'s not ready yet!',
+		A2(_elm_lang$core$Maybe$map, _user$project$CombatView$getName, context.hero),
+		_user$project$CombatView$initActors(context.hero));
+};
+var _user$project$CombatView$GoToMainMenu = {ctor: 'GoToMainMenu'};
 var _user$project$CombatView$NoOp = {ctor: 'NoOp'};
 
 var _user$project$HeroCreate$viewFooter = function (model) {
@@ -12612,48 +13571,34 @@ var _user$project$HeroCreate$viewClassOptions = F2(
 			},
 			A2(_elm_lang$core$List$map, _user$project$HeroCreate$viewClassOption, options));
 	});
-var _user$project$HeroCreate$getFileName = function (heroClass) {
-	return _elm_lang$core$String$toLower(
-		function () {
-			var _p0 = heroClass;
-			switch (_p0.ctor) {
-				case 'Melee':
-					return _elm_lang$core$Basics$toString(_p0._0);
-				case 'Ranged':
-					return _elm_lang$core$Basics$toString(_p0._0);
-				default:
-					return _elm_lang$core$Basics$toString(_p0._0);
-			}
-		}());
-};
 var _user$project$HeroCreate$getHeroClass = function (maybeMainClass) {
-	var _p1 = maybeMainClass;
-	if (_p1.ctor === 'Nothing') {
+	var _p0 = maybeMainClass;
+	if (_p0.ctor === 'Nothing') {
 		return _elm_lang$core$Maybe$Nothing;
 	} else {
-		var _p2 = _p1._0;
-		switch (_p2.ctor) {
+		var _p1 = _p0._0;
+		switch (_p1.ctor) {
 			case 'AlmostMelee':
-				var _p3 = _p2._0;
-				if (_p3.ctor === 'Just') {
+				var _p2 = _p1._0;
+				if (_p2.ctor === 'Just') {
 					return _elm_lang$core$Maybe$Just(
-						_user$project$Types$Melee(_p3._0));
+						_user$project$Types$Melee(_p2._0));
 				} else {
 					return _elm_lang$core$Maybe$Nothing;
 				}
 			case 'AlmostRanged':
-				var _p4 = _p2._0;
-				if (_p4.ctor === 'Just') {
+				var _p3 = _p1._0;
+				if (_p3.ctor === 'Just') {
 					return _elm_lang$core$Maybe$Just(
-						_user$project$Types$Ranged(_p4._0));
+						_user$project$Types$Ranged(_p3._0));
 				} else {
 					return _elm_lang$core$Maybe$Nothing;
 				}
 			default:
-				var _p5 = _p2._0;
-				if (_p5.ctor === 'Just') {
+				var _p4 = _p1._0;
+				if (_p4.ctor === 'Just') {
 					return _elm_lang$core$Maybe$Just(
-						_user$project$Types$Magic(_p5._0));
+						_user$project$Types$Magic(_p4._0));
 				} else {
 					return _elm_lang$core$Maybe$Nothing;
 				}
@@ -12661,11 +13606,10 @@ var _user$project$HeroCreate$getHeroClass = function (maybeMainClass) {
 	}
 };
 var _user$project$HeroCreate$viewHeroImage = function (model) {
-	var imageFilename = _user$project$HeroCreate$getFileName(
-		A2(
-			_elm_lang$core$Maybe$withDefault,
-			_user$project$Types$Melee(_user$project$Types$Knight),
-			_user$project$HeroCreate$getHeroClass(model.heroClass)));
+	var heroClass = A2(
+		_elm_lang$core$Maybe$withDefault,
+		_user$project$Types$Melee(_user$project$Types$Knight),
+		_user$project$HeroCreate$getHeroClass(model.heroClass));
 	return A2(
 		_elm_lang$html$Html$div,
 		{
@@ -12680,10 +13624,7 @@ var _user$project$HeroCreate$viewHeroImage = function (model) {
 				{
 					ctor: '::',
 					_0: _elm_lang$html$Html_Attributes$src(
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'https://raw.githubusercontent.com/RyanNHG/slay-the-things/gh-pages/public/img/64x64/heroes/',
-							A2(_elm_lang$core$Basics_ops['++'], imageFilename, '.png'))),
+						_user$project$Utilities$getHeroImageFilepath(heroClass)),
 					_1: {
 						ctor: '::',
 						_0: _elm_lang$html$Html_Attributes$class('hero-preview slideRight'),
@@ -12695,28 +13636,28 @@ var _user$project$HeroCreate$viewHeroImage = function (model) {
 		});
 };
 var _user$project$HeroCreate$initialAttributes = function ($class) {
-	var _p6 = $class;
-	switch (_p6.ctor) {
+	var _p5 = $class;
+	switch (_p5.ctor) {
 		case 'Melee':
-			var _p7 = _p6._0;
-			if (_p7.ctor === 'Knight') {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			var _p6 = _p5._0;
+			if (_p6.ctor === 'Knight') {
+				return A4(_user$project$Types$Attributes, 4, 4, 4, 4);
 			} else {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+				return A4(_user$project$Types$Attributes, 4, 4, 4, 4);
 			}
 		case 'Ranged':
-			var _p8 = _p6._0;
-			if (_p8.ctor === 'Ranger') {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			var _p7 = _p5._0;
+			if (_p7.ctor === 'Ranger') {
+				return A4(_user$project$Types$Attributes, 4, 4, 4, 4);
 			} else {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+				return A4(_user$project$Types$Attributes, 4, 4, 4, 4);
 			}
 		default:
-			var _p9 = _p6._0;
-			if (_p9.ctor === 'Wizard') {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+			var _p8 = _p5._0;
+			if (_p8.ctor === 'Wizard') {
+				return A4(_user$project$Types$Attributes, 4, 4, 4, 4);
 			} else {
-				return A4(_user$project$Types$HeroAttributes, 4, 4, 4, 4);
+				return A4(_user$project$Types$Attributes, 4, 4, 4, 4);
 			}
 	}
 };
@@ -12728,16 +13669,16 @@ var _user$project$HeroCreate$getHero = function (model) {
 		0)) {
 		return _elm_lang$core$Maybe$Nothing;
 	} else {
-		var _p10 = maybeHeroClass;
-		if (_p10.ctor === 'Just') {
-			var _p11 = _p10._0;
+		var _p9 = maybeHeroClass;
+		if (_p9.ctor === 'Just') {
+			var _p10 = _p9._0;
 			return _elm_lang$core$Maybe$Just(
 				A4(
 					_user$project$Types$Hero,
 					model.heroName,
-					_p11,
+					_p10,
 					_user$project$HeroCreate$initialLevel,
-					_user$project$HeroCreate$initialAttributes(_p11)));
+					_user$project$HeroCreate$initialAttributes(_p10)));
 		} else {
 			return _elm_lang$core$Maybe$Nothing;
 		}
@@ -12764,10 +13705,10 @@ var _user$project$HeroCreate$AlmostMelee = function (a) {
 	return {ctor: 'AlmostMelee', _0: a};
 };
 var _user$project$HeroCreate$getEmptyMainClass = function (maybeAlmostHero) {
-	var _p12 = maybeAlmostHero;
-	if (_p12.ctor === 'Just') {
-		var _p13 = _p12._0;
-		switch (_p13.ctor) {
+	var _p11 = maybeAlmostHero;
+	if (_p11.ctor === 'Just') {
+		var _p12 = _p11._0;
+		switch (_p12.ctor) {
 			case 'AlmostMelee':
 				return _user$project$HeroCreate$AlmostMelee(_elm_lang$core$Maybe$Nothing);
 			case 'AlmostRanged':
@@ -12776,7 +13717,7 @@ var _user$project$HeroCreate$getEmptyMainClass = function (maybeAlmostHero) {
 				return _user$project$HeroCreate$AlmostMagic(_elm_lang$core$Maybe$Nothing);
 		}
 	} else {
-		var _p14 = _elm_lang$core$Debug$log(
+		var _p13 = _elm_lang$core$Debug$log(
 			A2(
 				_elm_lang$core$Basics_ops['++'],
 				'HeroCreate: \'getEmptyMainClass\' was designed to only be used to reset subclasses.',
@@ -12786,8 +13727,8 @@ var _user$project$HeroCreate$getEmptyMainClass = function (maybeAlmostHero) {
 };
 var _user$project$HeroCreate$update = F2(
 	function (msg, model) {
-		var _p15 = msg;
-		switch (_p15.ctor) {
+		var _p14 = msg;
+		switch (_p14.ctor) {
 			case 'NoOp':
 				return _user$project$Utilities$just(model);
 			case 'GoToMainMenu':
@@ -12803,7 +13744,7 @@ var _user$project$HeroCreate$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							heroClass: _elm_lang$core$Maybe$Just(_p15._0)
+							heroClass: _elm_lang$core$Maybe$Just(_p14._0)
 						}));
 			case 'MeleeSubclassSelected':
 				return _user$project$Utilities$just(
@@ -12812,7 +13753,7 @@ var _user$project$HeroCreate$update = F2(
 						{
 							heroClass: _elm_lang$core$Maybe$Just(
 								_user$project$HeroCreate$AlmostMelee(
-									_elm_lang$core$Maybe$Just(_p15._0)))
+									_elm_lang$core$Maybe$Just(_p14._0)))
 						}));
 			case 'RangedSubclassSelected':
 				return _user$project$Utilities$just(
@@ -12821,7 +13762,7 @@ var _user$project$HeroCreate$update = F2(
 						{
 							heroClass: _elm_lang$core$Maybe$Just(
 								_user$project$HeroCreate$AlmostRanged(
-									_elm_lang$core$Maybe$Just(_p15._0)))
+									_elm_lang$core$Maybe$Just(_p14._0)))
 						}));
 			case 'MagicSubclassSelected':
 				return _user$project$Utilities$just(
@@ -12830,7 +13771,7 @@ var _user$project$HeroCreate$update = F2(
 						{
 							heroClass: _elm_lang$core$Maybe$Just(
 								_user$project$HeroCreate$AlmostMagic(
-									_elm_lang$core$Maybe$Just(_p15._0)))
+									_elm_lang$core$Maybe$Just(_p14._0)))
 						}));
 			case 'MainClassReset':
 				return _user$project$Utilities$just(
@@ -12849,19 +13790,19 @@ var _user$project$HeroCreate$update = F2(
 				return _user$project$Utilities$just(
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{heroName: _p15._0}));
+						{heroName: _p14._0}));
 			default:
-				var _p16 = _user$project$HeroCreate$getHero(model);
-				if (_p16.ctor === 'Just') {
+				var _p15 = _user$project$HeroCreate$getHero(model);
+				if (_p15.ctor === 'Just') {
 					return {
 						ctor: '_Tuple3',
 						_0: model,
 						_1: _elm_lang$core$Platform_Cmd$none,
 						_2: _user$project$Utilities$getCmd(
-							_user$project$Context$AddHero(_p16._0))
+							_user$project$Context$AddHero(_p15._0))
 					};
 				} else {
-					var _p17 = _elm_lang$core$Debug$log('Hero could not be created...');
+					var _p16 = _elm_lang$core$Debug$log('Hero could not be created...');
 					return _user$project$Utilities$just(model);
 				}
 		}
@@ -12870,29 +13811,29 @@ var _user$project$HeroCreate$HasSubclassSelected = {ctor: 'HasSubclassSelected'}
 var _user$project$HeroCreate$HasMainClassSelected = {ctor: 'HasMainClassSelected'};
 var _user$project$HeroCreate$HasNothingSelected = {ctor: 'HasNothingSelected'};
 var _user$project$HeroCreate$getCreateStep = function (model) {
-	var _p18 = model.heroClass;
-	if (_p18.ctor === 'Nothing') {
+	var _p17 = model.heroClass;
+	if (_p17.ctor === 'Nothing') {
 		return _user$project$HeroCreate$HasNothingSelected;
 	} else {
-		var _p19 = _p18._0;
-		switch (_p19.ctor) {
+		var _p18 = _p17._0;
+		switch (_p18.ctor) {
 			case 'AlmostMelee':
-				var _p20 = _p19._0;
-				if (_p20.ctor === 'Just') {
+				var _p19 = _p18._0;
+				if (_p19.ctor === 'Just') {
 					return _user$project$HeroCreate$HasSubclassSelected;
 				} else {
 					return _user$project$HeroCreate$HasMainClassSelected;
 				}
 			case 'AlmostRanged':
-				var _p21 = _p19._0;
-				if (_p21.ctor === 'Just') {
+				var _p20 = _p18._0;
+				if (_p20.ctor === 'Just') {
 					return _user$project$HeroCreate$HasSubclassSelected;
 				} else {
 					return _user$project$HeroCreate$HasMainClassSelected;
 				}
 			default:
-				var _p22 = _p19._0;
-				if (_p22.ctor === 'Just') {
+				var _p21 = _p18._0;
+				if (_p21.ctor === 'Just') {
 					return _user$project$HeroCreate$HasSubclassSelected;
 				} else {
 					return _user$project$HeroCreate$HasMainClassSelected;
@@ -12917,8 +13858,8 @@ var _user$project$HeroCreate$viewNavbarLabel = function (model) {
 					ctor: '::',
 					_0: _elm_lang$html$Html$text(
 						function () {
-							var _p23 = _user$project$HeroCreate$getCreateStep(model);
-							switch (_p23.ctor) {
+							var _p22 = _user$project$HeroCreate$getCreateStep(model);
+							switch (_p22.ctor) {
 								case 'HasNothingSelected':
 									return 'What\'s your style?';
 								case 'HasMainClassSelected':
@@ -12941,8 +13882,8 @@ var _user$project$HeroCreate$SubclassReset = {ctor: 'SubclassReset'};
 var _user$project$HeroCreate$MainClassReset = {ctor: 'MainClassReset'};
 var _user$project$HeroCreate$viewBackButton = function (model) {
 	var onClickMsg = function () {
-		var _p24 = _user$project$HeroCreate$getCreateStep(model);
-		switch (_p24.ctor) {
+		var _p23 = _user$project$HeroCreate$getCreateStep(model);
+		switch (_p23.ctor) {
 			case 'HasNothingSelected':
 				return _user$project$HeroCreate$GoToMainMenu;
 			case 'HasMainClassSelected':
@@ -13048,8 +13989,8 @@ var _user$project$HeroCreate$meleeSubclassOptions = {
 	}
 };
 var _user$project$HeroCreate$viewSubclassOptions = function (model) {
-	var _p25 = _user$project$HeroCreate$getEmptyMainClass(model.heroClass);
-	switch (_p25.ctor) {
+	var _p24 = _user$project$HeroCreate$getEmptyMainClass(model.heroClass);
+	switch (_p24.ctor) {
 		case 'AlmostMelee':
 			return A2(_user$project$HeroCreate$viewClassOptions, _user$project$HeroCreate$meleeSubclassOptions, model);
 		case 'AlmostRanged':
@@ -13176,8 +14117,8 @@ var _user$project$HeroCreate$viewOptions = function (model) {
 			_1: {ctor: '[]'}
 		},
 		function () {
-			var _p26 = _user$project$HeroCreate$getCreateStep(model);
-			switch (_p26.ctor) {
+			var _p25 = _user$project$HeroCreate$getCreateStep(model);
+			switch (_p25.ctor) {
 				case 'HasNothingSelected':
 					return {
 						ctor: '::',
