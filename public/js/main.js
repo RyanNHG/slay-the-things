@@ -8720,7 +8720,7 @@ var _user$project$HeroCreate$viewHeroImage = function (model) {
 					_0: _elm_lang$html$Html_Attributes$src(
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							'public/img/64x64/heroes/',
+							'/public/img/64x64/heroes/',
 							A2(_elm_lang$core$Basics_ops['++'], imageFilename, '.png'))),
 					_1: {
 						ctor: '::',

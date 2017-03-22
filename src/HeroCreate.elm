@@ -321,7 +321,7 @@ viewHeroImage model =
     in
         div [ class "image-container" ]
             [ img
-                [ src <| "public/img/64x64/heroes/" ++ imageFilename ++ ".png"
+                [ src <| "/public/img/64x64/heroes/" ++ imageFilename ++ ".png"
                 , class "hero-preview slideRight"
                 ]
                 []
