@@ -29,7 +29,7 @@ type RangedSubclass
 
 type MagicSubclass
     = Wizard
-    | Healer
+    | Cleric
 
 
 type alias HeroAttributes =

@@ -15,7 +15,12 @@ var paths = {
 }
 
 var elmOptions = {
-    debug: (process.env.NODE_ENV !== 'production')
+    dev: {
+        debug: true
+    },
+    prod: {
+
+    }
 }
 
 gulp.task('elm-make', elm.init)
@@ -23,7 +28,16 @@ gulp.task('elm-make', elm.init)
 gulp.task('elm', ['elm-make'], () => {
   
   gulp.src(paths.elm.main)
-    .pipe(elm.bundle(paths.elm.output.filename, elmOptions))
+    .pipe(elm.bundle(paths.elm.output.filename, elmOptions.dev))
+    .on('error', console.error)
+    .pipe(gulp.dest(paths.elm.output.directory))
+
+})
+
+gulp.task('build:elm', ['elm-make'], () => {
+  
+  gulp.src(paths.elm.main)
+    .pipe(elm.bundle(paths.elm.output.filename, elmOptions.prod))
     .on('error', console.error)
     .pipe(gulp.dest(paths.elm.output.directory))
 
@@ -45,7 +59,7 @@ gulp.task('watch:server', () => {
 
 })
 
-gulp.task('build', ['elm'])
+gulp.task('build', ['build:elm'])
 
 gulp.task('watch', ['watch:elm', 'watch:server'])
 

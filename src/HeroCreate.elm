@@ -27,7 +27,8 @@ type alias Model =
 
 
 type Msg
-    = MainClassSelected MainClass
+    = NoOp
+    | MainClassSelected MainClass
     | MeleeSubclassSelected MeleeSubclass
     | RangedSubclassSelected RangedSubclass
     | MagicSubclassSelected MagicSubclass
@@ -74,13 +75,16 @@ initialAttributes class =
                 Wizard ->
                     HeroAttributes 4 4 4 4
 
-                Healer ->
+                Cleric ->
                     HeroAttributes 4 4 4 4
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Cmd Context.Msg )
 update msg model =
     case msg of
+        NoOp ->
+            just model
+
         GoToMainMenu ->
             ( model, Cmd.none, getCmd <| Context.GotoPage Context.MainMenu )
 
@@ -295,16 +299,46 @@ viewNavbarLabel model =
 viewOptions : Model -> Html Msg
 viewOptions model =
     div [ class "options-section" ]
-        [ case getCreateStep model of
+        (case getCreateStep model of
             HasNothingSelected ->
-                viewMainClassOptions model
+                [ viewMainClassOptions model ]
 
             HasMainClassSelected ->
-                viewSubclassOptions model
+                [ viewSubclassOptions model ]
 
             HasSubclassSelected ->
-                viewNameOptions model
-        ]
+                [ viewHeroImage model
+                , viewNameOptions model
+                ]
+        )
+
+
+viewHeroImage : Model -> Html Msg
+viewHeroImage model =
+    let
+        imageFilename =
+            getFileName (Maybe.withDefault (Melee Knight) (getHeroClass model.heroClass))
+    in
+        div [ class "image-container" ]
+            [ img
+                [ src <| "public/img/64x64/heroes/" ++ imageFilename ++ ".png"
+                , class "hero-preview slideRight"
+                ]
+                []
+            ]
+
+
+getFileName : HeroClass -> String
+getFileName heroClass =
+    case heroClass of
+        Melee subclass ->
+            toString subclass
+
+        Ranged subclass ->
+            toString subclass
+
+        Magic subclass ->
+            toString subclass
 
 
 type alias ClassOption =
@@ -338,7 +372,7 @@ rangedSubclassOptions =
 magicSubclassOptions : List ClassOption
 magicSubclassOptions =
     [ ClassOption "Wizard" (MagicSubclassSelected Wizard)
-    , ClassOption "Healer" (MagicSubclassSelected Healer)
+    , ClassOption "Cleric" (MagicSubclassSelected Cleric)
     ]
 
 
@@ -373,10 +407,10 @@ viewSubclassOptions model =
 
 viewNameOptions : Model -> Html Msg
 viewNameOptions model =
-    div [ class "name-form" ]
+    Html.form [ class "name-form", onSubmit NoOp ]
         [ label [ class "label" ] [ text "Name" ]
-        , input [ class "input", type_ "text", value model.heroName, onInput NameChanged ] []
-        , button [ class "button", onClick CreateHero ] [ text "Let's goooo!" ]
+        , input [ autofocus True, class "input", type_ "text", value model.heroName, onInput NameChanged ] []
+        , button [ type_ "submit", class "button", onClick CreateHero ] [ text "Let's goooo!" ]
         ]
 
 

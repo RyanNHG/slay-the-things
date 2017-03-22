@@ -44,7 +44,7 @@ initButtons context =
                 |> (List.map getButtonForHero)
                 |> Debug.log "map"
     in
-        initialButtons ++ heroButtons
+        heroButtons ++ initialButtons
 
 
 isActiveHero : Maybe Hero -> Hero -> Bool
@@ -88,9 +88,9 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "main-menu container row" ]
-        [ div [ class "column" ] [ viewTitle model ]
-        , div [ class "column align-start" ] [ viewMenuButtons model ]
+    div [ class "main-menu container" ]
+        [ viewTitle model
+        , viewMenuButtons model
         ]
 
 

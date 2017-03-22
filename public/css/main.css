@@ -18,25 +18,32 @@ main,
     background-color: #069;
     border-color: #069;
 }
+
+.button:focus,
+.button:active,
+.button:visited,
 .button:hover {
     background-color: #069;
     border-color: #069;
 }
 
-.main-menu > .column {
+/* Main Menu */
+
+.main-menu {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-}
-
-.main-menu .align-start {
-    align-items: flex-start;
+    background: #333;
+    color: white;
 }
 
 .main-menu .action-section {
     display: flex;
     flex-direction: column;
 }
+
+/* Hero Create */
 
 .hero-create {
     display: flex;
@@ -69,7 +76,9 @@ main,
 .hero-create .options-section {
     flex: 1;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    background-color: mediumseagreen;
 }
 
 .hero-create .options {
@@ -79,6 +88,7 @@ main,
     padding: 1.5rem;
     justify-content: center;
     align-items: center;
+    width: 100%;
 }
 
 .hero-create .options .button {
@@ -95,4 +105,38 @@ main,
     justify-content: center;
     width: 100%;
     max-width: 480px;
+    padding: 1.5rem;
+    background-color: mediumseagreen;
+}
+
+.hero-create .image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: -15px;
+    padding-top: 128px;
+    background-color: #77deff;
+}
+
+.hero-create .name-form .label {
+    color: white;
+}
+
+.hero-create .name-form .input {
+    background-color: white;
+}
+
+.hero-create img {
+    position: relative;
+}
+
+/* COMBAT VIEW */
+.combat-view {
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
 }
