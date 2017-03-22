@@ -1,7 +1,7 @@
 module HeroCreate exposing (Model, Msg, init, update, view)
 
 import Context exposing (Context)
-import Utilities exposing (getCmd, just)
+import Utilities exposing (..)
 import Types exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -49,34 +49,6 @@ init context =
 initialLevel : Int
 initialLevel =
     1
-
-
-initialAttributes : HeroClass -> Attributes
-initialAttributes class =
-    case class of
-        Melee subclass ->
-            case subclass of
-                Knight ->
-                    Attributes 4 4 4 4
-
-                Rogue ->
-                    Attributes 4 4 4 4
-
-        Ranged subclass ->
-            case subclass of
-                Ranger ->
-                    Attributes 4 4 4 4
-
-                Axethrower ->
-                    Attributes 4 4 4 4
-
-        Magic subclass ->
-            case subclass of
-                Wizard ->
-                    Attributes 4 4 4 4
-
-                Cleric ->
-                    Attributes 4 4 4 4
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Cmd Context.Msg )
@@ -145,6 +117,7 @@ getHero model =
                             model.heroName
                             heroClass
                             initialLevel
+                            (initStatus (initialAttributes heroClass))
                             (initialAttributes heroClass)
                         )
 

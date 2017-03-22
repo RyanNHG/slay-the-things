@@ -38,11 +38,8 @@ initButtons context =
         heroButtons =
             context.heroes
                 |> (List.partition (isActiveHero context.hero))
-                |> Debug.log "partition"
                 |> unpartition
-                |> Debug.log "unpartition"
                 |> (List.map getButtonForHero)
-                |> Debug.log "map"
     in
         heroButtons ++ initialButtons
 
