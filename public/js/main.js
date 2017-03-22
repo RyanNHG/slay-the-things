@@ -8654,15 +8654,18 @@ var _user$project$HeroCreate$viewClassOptions = F2(
 			A2(_elm_lang$core$List$map, _user$project$HeroCreate$viewClassOption, options));
 	});
 var _user$project$HeroCreate$getFileName = function (heroClass) {
-	var _p0 = heroClass;
-	switch (_p0.ctor) {
-		case 'Melee':
-			return _elm_lang$core$Basics$toString(_p0._0);
-		case 'Ranged':
-			return _elm_lang$core$Basics$toString(_p0._0);
-		default:
-			return _elm_lang$core$Basics$toString(_p0._0);
-	}
+	return _elm_lang$core$String$toLower(
+		function () {
+			var _p0 = heroClass;
+			switch (_p0.ctor) {
+				case 'Melee':
+					return _elm_lang$core$Basics$toString(_p0._0);
+				case 'Ranged':
+					return _elm_lang$core$Basics$toString(_p0._0);
+				default:
+					return _elm_lang$core$Basics$toString(_p0._0);
+			}
+		}());
 };
 var _user$project$HeroCreate$getHeroClass = function (maybeMainClass) {
 	var _p1 = maybeMainClass;
